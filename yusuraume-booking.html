@@ -1629,5 +1629,31 @@ setInterval(()=>{renderTG();renderToday();renderList();renderAvail();},60000);
 // Check lock banner
 setInterval(()=>checkLockBanner(document.getElementById('fDate').value),5000);
 </script>
-</body>
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, push, onValue } 
+from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBZ9BvnMHqiRCrXP8-DNFSWdNFy3kD8P_s",
+  authDomain: "massage-salon-23513.firebaseapp.com",
+  databaseURL: "https://massage-salon-23513-default-rtdb.firebaseio.com",
+  projectId: "massage-salon-23513",
+  storageBucket: "massage-salon-23513.firebasestorage.app",
+  messagingSenderId: "970242253762",
+  appId: "1:970242253762:web:9eb5ad7ff4109877f1ec5b",
+  measurementId: "G-5KXN4W2R93"
+};
+
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+
+// Make available globally
+window.database = database;
+window.ref = ref;
+window.push = push;
+window.onValue = onValue;
+
+</script></body>
 </html>
