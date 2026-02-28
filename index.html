@@ -1559,23 +1559,35 @@ setInterval(()=>{renderTG();renderToday();renderList();renderAvail();},60000);
 // Check lock banner
 setInterval(()=>checkLockBanner(document.getElementById('fDate').value),5000);
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxDNNvDH7fzJ57ivCHTAsl2jzZlV9Cut_Jqssr-yT9uQ-eBbvbQeN5hm2nszOGP1nUW7Q/exec";
+<script>
+const API_URL="https://script.google.com/macros/s/あなたのID/exec";
 
-/* 予約送信 */
-async function saveReservation(data){
+/* 入力内容取得 */
+function collectData(){
+  return {
+    name:document.querySelector('input[type="text"]')?.value||"",
+    date:document.querySelector('input[type="date"]')?.value||"",
+    people:document.querySelector('input[type="number"]')?.value||"",
+    plan:document.querySelector('select')?.value||"",
+    note:document.querySelector('textarea')?.value||""
+  };
+}
+
+/* Googleへ保存 */
+async function autoSave(){
+  const data=collectData();
+  if(!data.name && !data.date) return;
+
   await fetch(API_URL,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify(data)
   });
+  console.log("保存しました",data);
 }
 
-/* 予約一覧取得 */
-async function loadReservations(){
-  const res = await fetch(API_URL);
-  const list = await res.json();
-  console.log("予約一覧",list);
-}
+/* どこか変更されたら保存 */
+document.addEventListener("change",autoSave);
 </script>
 </body>
 </html>
