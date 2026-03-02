@@ -1,0 +1,2165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ゆすらうめ — 予約管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Zen+Kaku+Gothic+New:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0b08;--surface:#181410;--panel:rgba(26,21,15,0.96);
+  --border:rgba(200,165,105,0.28);--border-h:rgba(200,165,105,0.65);
+  --gold:#dab85a;--gold2:#f2dc90;--gold3:rgba(218,184,90,0.15);
+  --ivory:#f6f1e8;--muted:rgba(246,241,232,0.60);--dim:rgba(246,241,232,0.28);
+  --red:#c86060;--red2:rgba(200,96,96,0.18);--sage:#8aba95;--sage2:rgba(138,186,149,0.18);
+  --blue:#6898c2;--blue2:rgba(104,152,194,0.16);--r:5px;
+  --spc1:#aa88d8;--spc1b:rgba(170,136,216,0.18);
+  --spc2:#7bbcaa;--spc2b:rgba(123,188,170,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--ivory);font-family:'Zen Kaku Gothic New',sans-serif;min-height:100vh;overflow-x:hidden;font-size:14.5px;line-height:1.7;font-weight:400;}
+.bg-wrap{position:fixed;inset:0;z-index:0;overflow:hidden;}
+.bg-grad{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 15% 20%,rgba(200,169,107,0.055) 0%,transparent 55%),radial-gradient(ellipse 60% 70% at 85% 80%,rgba(122,158,130,0.04) 0%,transparent 55%),linear-gradient(180deg,#0e0c09 0%,#12100d 60%,#0e0c09 100%);}
+.bg-lines{position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,rgba(200,169,107,0.025) 0px,transparent 1px,transparent 80px,rgba(200,169,107,0.025) 81px);pointer-events:none;}
+.bg-vl{position:absolute;inset:0;background-image:repeating-linear-gradient(90deg,rgba(200,169,107,0.015) 0px,transparent 1px,transparent 120px,rgba(200,169,107,0.015) 121px);pointer-events:none;}
+.bg-noise{position:absolute;inset:0;opacity:.028;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");pointer-events:none;}
+.app{position:relative;z-index:2;max-width:1440px;margin:0 auto;padding:0 16px 80px;}
+
+/* HEADER */
+header{text-align:center;padding:48px 0 36px;animation:fadeDown .9s ease both;}
+.hd-ornament{display:flex;align-items:center;gap:0;justify-content:center;margin-bottom:24px;}
+.hd-diamond{width:50px;height:50px;border:1.5px solid rgba(200,169,107,0.35);transform:rotate(45deg);position:relative;display:flex;align-items:center;justify-content:center;animation:rotatePulse 8s linear infinite;}
+.hd-diamond::before{content:'';position:absolute;inset:7px;border:1px solid rgba(200,169,107,0.2);}
+.hd-diamond-inner{width:8px;height:8px;background:var(--gold);border-radius:50%;transform:rotate(-45deg);box-shadow:0 0 12px rgba(200,169,107,0.8);}
+.hd-line{width:80px;height:1px;background:linear-gradient(90deg,transparent,rgba(200,169,107,0.4));animation:expandLine 1.2s .3s ease both;}
+.hd-line.r{background:linear-gradient(90deg,rgba(200,169,107,0.4),transparent);}
+@keyframes rotatePulse{0%{box-shadow:0 0 0 0 rgba(200,169,107,0)}50%{box-shadow:0 0 18px 4px rgba(200,169,107,0.12)}100%{box-shadow:0 0 0 0 rgba(200,169,107,0)}}
+@keyframes expandLine{from{width:0;opacity:0}to{width:80px;opacity:1}}
+.hd-jp{font-family:'Shippori Mincho',serif;font-size:clamp(2.2rem,4.5vw,3.6rem);font-weight:700;letter-spacing:.22em;color:var(--ivory);text-shadow:0 0 50px rgba(218,184,90,0.2);}
+.hd-en{font-family:'EB Garamond',serif;font-style:italic;font-size:clamp(1rem,1.5vw,1.15rem);letter-spacing:.35em;color:var(--gold);opacity:.9;margin-top:9px;}
+.hd-tagline-line{display:flex;align-items:center;gap:16px;justify-content:center;margin-top:14px;}
+.hd-tagline-line::before,.hd-tagline-line::after{content:'';flex:1;max-width:100px;height:1px;background:linear-gradient(90deg,transparent,rgba(200,169,107,0.3));}
+.hd-tagline-line::after{background:linear-gradient(90deg,rgba(200,169,107,0.3),transparent);}
+.hd-tag{font-size:10px;letter-spacing:.3em;color:rgba(200,169,107,0.5);}
+.hd-sub{font-size:10px;letter-spacing:.25em;color:var(--muted);margin-top:8px;}
+
+/* SYNC STATUS */
+.sync-bar{display:flex;justify-content:center;gap:8px;align-items:center;margin-bottom:20px;font-size:13px;letter-spacing:.12em;color:var(--muted);}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#555;}
+.sync-dot.connected{background:var(--sage);box-shadow:0 0 8px rgba(122,158,130,.8);animation:pulse 2s infinite;}
+.sync-dot.connecting{background:var(--gold);box-shadow:0 0 8px rgba(200,169,107,.6);animation:pulse .8s infinite;}
+.sync-dot.offline{background:var(--red);}
+
+/* LANG */
+.lang-bar{display:flex;justify-content:center;gap:6px;margin-bottom:28px;animation:fadeUp .7s .2s ease both;}
+.lb{padding:8px 20px;font-size:12px;letter-spacing:.15em;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;border-radius:var(--r);transition:all .3s;font-family:'Zen Kaku Gothic New',sans-serif;}
+.lb:hover,.lb.active{border-color:var(--border-h);color:var(--gold);background:var(--gold3);}
+
+/* TABS */
+.tabs-wrap{display:flex;justify-content:center;margin-bottom:28px;animation:fadeUp .7s .3s ease both;}
+.tabs{display:inline-flex;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;flex-wrap:wrap;}
+.tab-btn{padding:13px 26px;font-size:13px;letter-spacing:.16em;font-family:'Zen Kaku Gothic New',sans-serif;background:transparent;color:var(--muted);border:none;border-right:1px solid var(--border);cursor:pointer;transition:all .3s;position:relative;overflow:hidden;white-space:nowrap;}
+.tab-btn:last-child{border-right:none;}
+.tab-btn::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transition:transform .3s;}
+.tab-btn.active{color:var(--gold);background:var(--gold3);}
+.tab-btn.active::after{transform:scaleX(1);}
+.tab-btn:hover:not(.active){color:rgba(242,237,228,.7);background:rgba(200,169,107,.05);}
+
+/* GRID */
+.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;animation:fadeUp .7s .4s ease both;}
+@media(max-width:960px){.main-grid{grid-template-columns:1fr;}}
+
+/* PANEL */
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;backdrop-filter:blur(28px);overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,.35);}
+.ph{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.ph-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px rgba(200,169,107,.7);animation:pulse 2s infinite;flex-shrink:0;}
+.ph-dot.r{background:var(--red);box-shadow:0 0 8px rgba(168,80,80,.7);}
+.ph-dot.g{background:var(--sage);box-shadow:0 0 8px rgba(122,158,130,.7);}
+.ph-dot.b{background:var(--blue);box-shadow:0 0 8px rgba(85,128,168,.7);}
+.ph-title{font-size:14px;letter-spacing:.25em;color:var(--gold2);font-family:'Shippori Mincho',serif;}
+.pb{padding:24px 22px;}
+
+/* FIELDS */
+.fg{margin-bottom:18px;}
+.fl{display:block;font-size:12px;letter-spacing:.18em;color:var(--muted);margin-bottom:8px;text-transform:uppercase;font-weight:400;}
+.fl .req{color:var(--red);margin-left:2px;}
+.fi,.fs{width:100%;padding:12px 15px;background:rgba(246,241,232,.05);border:1px solid var(--border);border-radius:var(--r);color:var(--ivory);font-family:'Zen Kaku Gothic New',sans-serif;font-size:15px;outline:none;transition:border-color .25s,background .25s;-webkit-appearance:none;appearance:none;}
+.fi:focus,.fs:focus{border-color:var(--border-h);background:rgba(200,169,107,.06);}
+.fi.err,.fs.err{border-color:rgba(168,80,80,.6);background:rgba(168,80,80,.05);}
+.fs option,.fs optgroup{background:#1a1510;color:var(--ivory);}
+.fs:disabled{opacity:.3;cursor:not-allowed;}
+.fta{width:100%;padding:12px 15px;background:rgba(246,241,232,.05);border:1px solid var(--border);border-radius:var(--r);color:var(--ivory);font-family:'Zen Kaku Gothic New',sans-serif;font-size:15px;outline:none;resize:vertical;min-height:70px;line-height:1.7;transition:border-color .25s;}
+.fta:focus{border-color:var(--border-h);}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+
+/* TOGGLE */
+.tog{display:flex;flex-wrap:wrap;}
+.tog-btn{flex:1;min-width:80px;padding:11px 8px;font-size:13.5px;letter-spacing:.08em;font-family:'Zen Kaku Gothic New',sans-serif;background:rgba(246,241,232,.04);border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .25s;text-align:center;}
+.tog-btn:first-child{border-radius:var(--r) 0 0 var(--r);}
+.tog-btn:last-child{border-radius:0 var(--r) var(--r) 0;}
+.tog-btn:not(:first-child){border-left:none;}
+.tog-btn.active{color:var(--gold);border-color:var(--border-h);background:var(--gold3);}
+.tog-btn:disabled{opacity:.22;cursor:not-allowed;}
+.tog-btn.special{border-color:rgba(85,128,168,.4);color:rgba(85,128,168,.7);}
+.tog-btn.special.active{background:var(--blue2);border-color:rgba(85,128,168,.6);color:#82aacc;}
+
+/* NOTE BOXES */
+.note-box{font-size:13px;color:rgba(218,184,90,.9);letter-spacing:.04em;padding:10px 14px;background:rgba(218,184,90,.09);border:1px solid rgba(218,184,90,.3);border-radius:var(--r);line-height:1.8;margin-top:9px;display:none;}
+.note-box.show{display:block;}
+.note-red{font-size:13px;color:rgba(200,96,96,.9);letter-spacing:.04em;padding:10px 14px;background:var(--red2);border:1px solid rgba(200,96,96,.3);border-radius:var(--r);line-height:1.8;margin-top:9px;display:none;}
+.note-red.show{display:block;}
+.note-blue{font-size:13px;color:rgba(104,152,194,.9);letter-spacing:.04em;padding:10px 14px;background:var(--blue2);border:1px solid rgba(104,152,194,.35);border-radius:var(--r);line-height:1.8;margin-top:9px;}
+
+/* DUO BLOCK */
+.duo-block{border:1px solid rgba(200,169,107,.22);border-radius:var(--r);padding:14px;background:rgba(200,169,107,.03);margin-top:8px;display:none;}
+.duo-block.show{display:block;animation:fadeUp .25s ease both;}
+.duo-block-title{font-size:10px;letter-spacing:.25em;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:8px;font-family:'Shippori Mincho',serif;}
+.duo-block-title::before{content:'';display:inline-block;width:14px;height:1px;background:var(--gold);}
+.staff-chip{display:inline-block;padding:2px 8px;font-size:10px;border-radius:20px;border:1px solid rgba(200,169,107,.35);color:var(--gold);background:var(--gold3);margin-left:6px;}
+.staff-chip.female{border-color:rgba(196,160,196,.4);color:#c4a0c4;background:rgba(196,160,196,.09);}
+
+/* TIME GRID */
+.tg{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:12px;}
+.ts{padding:10px 4px;text-align:center;border-radius:var(--r);border:1px solid var(--border);background:rgba(246,241,232,.03);cursor:pointer;transition:all .2s;color:rgba(246,241,232,.72);position:relative;font-family:'EB Garamond',serif;font-size:15px;letter-spacing:.02em;}
+.ts:hover:not(.tk):not(.dis){border-color:var(--border-h);background:var(--gold3);color:var(--gold);}
+.ts.sel{border-color:var(--gold);background:rgba(200,169,107,.18);color:var(--gold);font-weight:500;}
+.ts.tk{background:var(--red2);border-color:rgba(168,80,80,.3);color:rgba(168,80,80,.55);cursor:not-allowed;}
+.ts.tk::after{content:'×';position:absolute;top:1px;right:3px;font-size:8px;}
+.ts.dis{opacity:.15;cursor:not-allowed;}
+.ts.past{opacity:.1;cursor:not-allowed;text-decoration:line-through;}
+
+/* MULTI MENU */
+.menu2-wrap{border:1px solid rgba(200,169,107,.2);border-radius:var(--r);padding:12px;background:rgba(200,169,107,.03);margin-top:8px;display:none;}
+.menu2-wrap.show{display:block;animation:fadeUp .25s ease both;}
+.add-menu-toggle{display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(200,169,107,.6);cursor:pointer;margin-top:6px;letter-spacing:.1em;}
+.add-menu-toggle input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;cursor:pointer;}
+.add-menu-toggle:hover{color:var(--gold);}
+
+/* BOOK BTN */
+.btn-book{width:100%;padding:16px;background:linear-gradient(135deg,rgba(218,184,90,.18),rgba(218,184,90,.08));border:1px solid rgba(218,184,90,.5);color:var(--gold);font-family:'Shippori Mincho',serif;font-size:16px;letter-spacing:.42em;cursor:pointer;border-radius:var(--r);transition:all .35s;position:relative;overflow:hidden;margin-top:8px;}
+.btn-book::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(200,169,107,.28),rgba(200,169,107,.1));transform:scaleX(0);transform-origin:left;transition:transform .35s;}
+.btn-book:hover::before{transform:scaleX(1);}
+.btn-book:hover{letter-spacing:.55em;}
+.btn-book span{position:relative;z-index:1;}
+
+/* BOOKING CARDS */
+.bc-list{display:flex;flex-direction:column;gap:10px;}
+.bc{padding:16px 18px;background:rgba(26,21,15,.8);border:1px solid var(--border);border-radius:7px;animation:cardIn .35s ease both;transition:border-color .25s,background .25s;}
+.bc:hover{border-color:rgba(210,175,110,.38);background:rgba(30,25,18,.85);}
+.bc.past-booking{border-color:rgba(242,237,228,.06);opacity:.75;}
+.bc-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px;}
+.bc-time{font-family:'EB Garamond',serif;font-size:30px;color:var(--gold2);line-height:1;}
+.bc-time-end{font-family:'EB Garamond',serif;font-size:15px;color:var(--muted);margin-top:3px;}
+.bc-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.badge{padding:4px 11px;font-size:11.5px;letter-spacing:.08em;border-radius:20px;border:1px solid;}
+.badge.ok{color:var(--sage);border-color:rgba(122,158,130,.4);background:rgba(122,158,130,.09);}
+.badge.room{color:#b89fc8;border-color:rgba(184,159,200,.4);background:rgba(184,159,200,.09);}
+.badge.duo{color:var(--gold);border-color:rgba(200,169,107,.4);background:var(--gold3);}
+.badge.multi{color:#82b4c8;border-color:rgba(130,180,200,.4);background:rgba(130,180,200,.09);}
+.badge.spec{color:#82aacc;border-color:rgba(85,128,168,.4);background:var(--blue2);}
+.badge.past{color:var(--muted);border-color:rgba(242,237,228,.1);background:rgba(242,237,228,.03);}
+.bc-acts{display:flex;gap:5px;flex-shrink:0;}
+.bc-btn{padding:7px 14px;font-size:12px;letter-spacing:.08em;background:none;border:1px solid;cursor:pointer;border-radius:var(--r);transition:all .2s;font-family:'Zen Kaku Gothic New',sans-serif;}
+.bc-btn.edit{color:rgba(200,169,107,.55);border-color:rgba(200,169,107,.22);}
+.bc-btn.edit:hover{color:var(--gold);border-color:var(--border-h);background:var(--gold3);}
+.bc-btn.del{color:rgba(168,80,80,.5);border-color:rgba(168,80,80,.18);}
+.bc-btn.del:hover{color:var(--red);border-color:rgba(168,80,80,.5);background:var(--red2);}
+
+/* DETAIL GRID */
+.bc-details{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px;padding:10px 0 0;border-top:1px solid rgba(200,169,107,.1);}
+.bc-detail{padding:7px 10px;background:rgba(242,237,228,.025);border-radius:var(--r);}
+.bc-dl{font-size:11px;letter-spacing:.16em;color:var(--muted);margin-bottom:4px;text-transform:uppercase;}
+.bc-dv{font-size:14.5px;color:var(--ivory);line-height:1.5;}
+.bc-dv.gold{color:var(--gold2);}
+.bc-note-row{padding:7px 10px;background:rgba(242,237,228,.025);border-radius:var(--r);grid-column:1/-1;}
+
+/* HISTORY */
+.hist-toggle{font-size:10px;letter-spacing:.12em;color:rgba(200,169,107,.42);cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin-top:7px;border-bottom:1px dotted rgba(200,169,107,.22);padding-bottom:1px;}
+.hist-toggle:hover{color:var(--gold);}
+.hist-panel{margin-top:7px;padding:9px;background:rgba(200,169,107,.04);border:1px solid rgba(200,169,107,.12);border-radius:var(--r);display:none;}
+.hist-panel.open{display:block;}
+.hist-row{font-size:10px;color:rgba(200,169,107,.36);padding:3px 0;border-bottom:1px solid rgba(200,169,107,.07);line-height:1.7;}
+.hist-row:last-child{border-bottom:none;}
+
+/* EDIT PANEL */
+.ep{margin-top:10px;padding:14px;background:rgba(200,169,107,.04);border:1px solid rgba(200,169,107,.18);border-radius:var(--r);display:none;}
+.ep.open{display:block;animation:fadeUp .25s ease both;}
+.ep-acts{display:flex;gap:8px;margin-top:10px;}
+.btn-save{flex:1;padding:8px;font-size:11px;letter-spacing:.2em;background:rgba(200,169,107,.14);border:1px solid rgba(200,169,107,.42);color:var(--gold);cursor:pointer;border-radius:var(--r);transition:all .25s;font-family:'Zen Kaku Gothic New',sans-serif;}
+.btn-save:hover{background:rgba(200,169,107,.24);}
+.btn-cancel{padding:8px 14px;font-size:11px;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;border-radius:var(--r);transition:all .25s;font-family:'Zen Kaku Gothic New',sans-serif;}
+
+/* AVAIL */
+.av-grid{display:flex;flex-direction:column;gap:18px;}
+.av-label{font-size:10px;letter-spacing:.3em;color:var(--gold2);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border);font-family:'Shippori Mincho',serif;}
+.av-slots{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;}
+.av-s{padding:4px 8px;font-size:11px;border-radius:var(--r);border:1px solid;font-family:'EB Garamond',serif;}
+.av-s.free{border-color:rgba(122,158,130,.35);color:var(--sage);background:var(--sage2);}
+.av-s.busy{border-color:rgba(168,80,80,.25);color:rgba(168,80,80,.55);background:var(--red2);text-decoration:line-through;}
+.av-s.past{opacity:.3;}
+.av-row{font-size:12px;color:rgba(242,237,228,.45);padding:3px 0;line-height:1.8;border-bottom:1px solid rgba(242,237,228,.04);}
+
+/* MENU */
+.ms{margin-bottom:24px;}
+.ms h3{font-family:'Shippori Mincho',serif;font-size:17px;color:var(--gold2);letter-spacing:.2em;margin-bottom:12px;padding-bottom:9px;border-bottom:1px solid var(--border);}
+.mi{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid rgba(242,237,228,.04);}
+.mi:last-child{border-bottom:none;}
+.mi-name{font-size:15px;color:var(--ivory);}
+.mi-sub{font-size:10px;color:var(--muted);margin-left:6px;}
+.mi-price{font-family:'EB Garamond',serif;font-size:19px;color:var(--gold);white-space:nowrap;}
+
+/* LOCK BANNER */
+.lock-banner{padding:11px 15px;background:rgba(200,169,107,.08);border:1px solid rgba(200,169,107,.28);border-radius:var(--r);margin-bottom:14px;font-size:11px;color:var(--gold);letter-spacing:.07em;line-height:1.8;display:none;}
+.lock-banner.show{display:block;animation:fadeUp .3s ease both;}
+
+/* TOAST */
+.toast{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-80px);background:rgba(13,11,8,.97);border:1px solid rgba(218,184,90,.55);color:var(--gold);padding:14px 32px;font-size:13.5px;letter-spacing:.2em;border-radius:var(--r);z-index:999;transition:transform .45s cubic-bezier(0.16,1,.3,1);backdrop-filter:blur(22px);white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* MODALS */
+.mo{position:fixed;inset:0;z-index:100;background:rgba(5,4,3,.82);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .28s;backdrop-filter:blur(10px);}
+.mo.show{opacity:1;pointer-events:all;}
+.md{background:#1a1510;border-radius:6px;padding:32px 38px;max-width:420px;width:92%;text-align:center;transform:scale(.92);transition:transform .28s cubic-bezier(0.16,1,.3,1);}
+.mo.show .md{transform:scale(1);}
+.md.err{border:1px solid rgba(168,80,80,.38);}
+.md.warn{border:1px solid rgba(200,169,107,.3);}
+.md.info{border:1px solid rgba(122,158,130,.3);}
+.md h3{font-family:'Shippori Mincho',serif;font-size:19px;margin-bottom:9px;letter-spacing:.1em;}
+.md.err h3{color:var(--red);}
+.md.warn h3{color:var(--gold);}
+.md.info h3{color:var(--sage);}
+.md p{font-size:13px;color:rgba(242,237,228,.6);line-height:1.9;margin-bottom:20px;}
+.md-btns{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;}
+.mb{padding:8px 24px;font-size:11px;letter-spacing:.18em;cursor:pointer;border-radius:var(--r);transition:all .25s;font-family:'Zen Kaku Gothic New',sans-serif;}
+.mb.danger{background:var(--red2);border:1px solid rgba(168,80,80,.4);color:var(--red);}
+.mb.danger:hover{background:rgba(168,80,80,.22);}
+.mb.sec{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.mb.gold{background:var(--gold3);border:1px solid rgba(200,169,107,.4);color:var(--gold);}
+.mb.gold:hover{background:rgba(200,169,107,.2);}
+.staff-info-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+.sc{padding:14px 15px;background:rgba(217,178,87,.05);border:1px solid var(--border);border-radius:var(--r);transition:border-color .2s;}
+.sc-name{font-family:'Shippori Mincho',serif;font-size:15px;color:var(--ivory);margin-bottom:5px;}
+.sc-hours{font-size:13.5px;color:var(--gold);letter-spacing:.06em;font-weight:500;}
+.sc-sk{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.75;}
+.empty{text-align:center;padding:36px 12px;color:var(--dim);}
+.empty .ei{font-size:26px;margin-bottom:8px;opacity:.3;}
+.empty p{font-size:11px;letter-spacing:.18em;}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cardIn{from{opacity:0;transform:translateX(-7px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.82)}}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:rgba(200,169,107,.25);border-radius:2px;}
+
+/* SPECIAL ARRANGEMENT */
+.tog-btn.special{border-color:rgba(155,127,204,.4);color:rgba(155,127,204,.8);}
+.tog-btn.special.active{background:var(--special2);border-color:rgba(155,127,204,.65);color:#c8b0f0;}
+.sc.spc1{border-color:rgba(168,130,212,.35);background:rgba(168,130,212,.07);}.sc.spc2{border-color:rgba(125,184,168,.35);background:rgba(125,184,168,.07);}
+.sc-hours.special{color:#c8b0f0;}
+.special-block{border:1px solid rgba(155,127,204,.28);border-radius:var(--r);padding:16px;background:rgba(155,127,204,.06);margin-top:8px;display:none;}
+.special-block.show{display:block;animation:fadeUp .25s ease both;}
+.special-block-title{font-size:12px;letter-spacing:.2em;color:#c8b0f0;margin-bottom:12px;display:flex;align-items:center;gap:8px;font-family:'Shippori Mincho',serif;}
+.special-block-title::before{content:'';display:inline-block;width:14px;height:1px;background:#c8b0f0;}
+
+/* ══ ENHANCED VISIBILITY ══ */
+/* スタッフ選択カード */
+.sc{padding:14px 16px;background:rgba(218,184,90,.04);border:1px solid var(--border);border-radius:var(--r);transition:border-color .2s;}
+.sc:hover{border-color:var(--border-h);}
+.sc.spc1{border-color:rgba(170,136,216,.35);background:rgba(170,136,216,.06);}
+.sc.spc2{border-color:rgba(123,188,170,.35);background:rgba(123,188,170,.06);}
+.sc-hours.spc1{color:#d0b0f2;}
+.sc-hours.spc2{color:#9adcc8;}
+
+/* 連続予約ブロック */
+.menu2-wrap{border:1px solid rgba(218,184,90,.22);border-radius:var(--r);padding:16px;background:rgba(218,184,90,.03);margin-top:9px;display:none;}
+.duo-block{border:1px solid rgba(218,184,90,.22);border-radius:var(--r);padding:16px;background:rgba(218,184,90,.03);margin-top:9px;display:none;}
+.duo-block-title{font-size:13px;letter-spacing:.2em;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:8px;font-family:'Shippori Mincho',serif;}
+.duo-block-title::before{content:'';display:inline-block;width:16px;height:1px;background:var(--gold);}
+
+/* 追加メニュートグル */
+.add-menu-toggle{display:flex;align-items:center;gap:9px;font-size:13.5px;color:rgba(218,184,90,.7);cursor:pointer;margin-top:8px;letter-spacing:.06em;padding:6px 0;}
+.add-menu-toggle:hover{color:var(--gold);}
+.add-menu-toggle input[type=checkbox]{accent-color:var(--gold);width:15px;height:15px;cursor:pointer;}
+
+/* 空き状況スロット */
+.av-s{padding:6px 10px;font-size:13.5px;border-radius:var(--r);border:1px solid;font-family:'EB Garamond',serif;}
+.av-label{font-size:13px;letter-spacing:.22em;color:var(--gold2);margin-bottom:12px;padding-bottom:9px;border-bottom:1px solid var(--border);font-family:'Shippori Mincho',serif;}
+.av-row{font-size:14px;color:rgba(246,241,232,.55);padding:5px 0;line-height:1.8;border-bottom:1px solid rgba(246,241,232,.05);}
+
+/* モーダル */
+.md{background:#1c160f;border-radius:8px;padding:36px 42px;max-width:440px;width:92%;text-align:center;transform:scale(.92);transition:transform .28s cubic-bezier(0.16,1,.3,1);border:1px solid var(--border);}
+.md h3{font-family:'Shippori Mincho',serif;font-size:22px;margin-bottom:11px;letter-spacing:.1em;}
+.md p{font-size:15px;color:rgba(246,241,232,.7);line-height:1.9;margin-bottom:22px;}
+
+/* 変更履歴 */
+.hist-toggle{font-size:12px;letter-spacing:.08em;color:rgba(218,184,90,.5);cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin-top:10px;border-bottom:1px dotted rgba(218,184,90,.3);padding-bottom:2px;}
+.hist-row{padding:10px 0;border-bottom:1px solid rgba(218,184,90,.1);line-height:1.8;}
+.hist-when{font-size:11px;color:rgba(218,184,90,.45);margin-bottom:5px;letter-spacing:.04em;}
+.hist-detail{font-size:13px;color:rgba(246,241,232,.65);margin-bottom:2px;}
+.hist-detail strong{color:rgba(218,184,90,.85);}
+.hist-tag{display:inline-block;font-size:10px;letter-spacing:.12em;color:rgba(246,241,232,.35);background:rgba(246,241,232,.06);border:1px solid rgba(246,241,232,.12);border-radius:3px;padding:1px 6px;margin-right:6px;vertical-align:middle;}
+
+/* スクロールバー */
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-thumb{background:rgba(218,184,90,.3);border-radius:3px;}
+
+/* time grid */
+.tg{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:13px;}
+
+/* スタッフ情報行レスポンシブ */
+@media(max-width:900px){.staff-info-row{grid-template-columns:1fr 1fr !important;gap:10px;}}
+@media(max-width:500px){.staff-info-row{grid-template-columns:1fr !important;}}
+
+/* セーブ・キャンセルボタン */
+.btn-save{flex:1;padding:10px;font-size:12.5px;letter-spacing:.18em;background:rgba(218,184,90,.14);border:1px solid rgba(218,184,90,.45);color:var(--gold);cursor:pointer;border-radius:var(--r);transition:all .25s;font-family:'Zen Kaku Gothic New',sans-serif;}
+.btn-save:hover{background:rgba(218,184,90,.24);}
+.btn-cancel{padding:10px 16px;font-size:12.5px;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;border-radius:var(--r);transition:all .25s;font-family:'Zen Kaku Gothic New',sans-serif;}
+.btn-cancel:hover{border-color:var(--border-h);color:var(--ivory);}
+
+/* メインレイアウトギャップ */
+.main-grid{gap:22px;}
+
+/* Special badges */
+.tog-btn.spc1{border-color:rgba(170,136,216,.42);color:rgba(210,180,245,.8);}
+.tog-btn.spc1.active{background:var(--spc1b);border-color:rgba(170,136,216,.7);color:#d8c0f8;}
+.tog-btn.spc2{border-color:rgba(123,188,170,.42);color:rgba(160,220,200,.8);}
+.tog-btn.spc2.active{background:var(--spc2b);border-color:rgba(123,188,170,.7);color:#a8e0cc;}
+
+/* 最終確認ボタン */
+.bc-btn.confirm{border-color:rgba(138,186,149,.45);color:#8aba95;}
+.bc-btn.confirm:hover{background:rgba(138,186,149,.15);border-color:rgba(138,186,149,.7);}
+
+/* 未確認フィルターボタン */
+.unconf-btn{padding:7px 16px;font-size:13px;background:rgba(200,80,80,.12);border:1px solid rgba(200,80,80,.35);color:rgba(220,130,130,.9);cursor:pointer;border-radius:var(--r);transition:all .25s;font-family:'Zen Kaku Gothic New',sans-serif;letter-spacing:.04em;}
+.unconf-btn:hover{background:rgba(200,80,80,.2);border-color:rgba(200,80,80,.6);}
+.unconf-btn.active{background:rgba(200,80,80,.22);border-color:rgba(200,80,80,.7);color:#f08080;font-weight:500;}
+.unconf-btn[data-zero]{opacity:.45;pointer-events:none;}
+
+/* ══ LOGIN SCREEN ══ */
+#loginScreen{
+  position:fixed;inset:0;z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+  background:#0d0b08;
+}
+#loginScreen.hidden{display:none;}
+.login-box{
+  width:100%;max-width:380px;padding:48px 40px 44px;
+  background:rgba(22,18,12,.97);
+  border:1px solid rgba(200,165,105,.3);
+  border-radius:10px;
+  box-shadow:0 20px 80px rgba(0,0,0,.7);
+  text-align:center;
+  animation:fadeDown .6s ease both;
+}
+.login-diamond{width:44px;height:44px;border:1.5px solid rgba(200,165,105,.4);transform:rotate(45deg);margin:0 auto 28px;display:flex;align-items:center;justify-content:center;position:relative;}
+.login-diamond::after{content:'◆';position:absolute;font-size:14px;color:rgba(218,184,90,.6);transform:rotate(-45deg);}
+.login-title{font-family:'Shippori Mincho',serif;font-size:22px;letter-spacing:.25em;color:var(--ivory);margin-bottom:4px;}
+.login-sub{font-size:11px;letter-spacing:.2em;color:var(--muted);margin-bottom:32px;}
+.login-field{margin-bottom:16px;text-align:left;}
+.login-label{display:block;font-size:11px;letter-spacing:.18em;color:var(--muted);margin-bottom:7px;text-transform:uppercase;}
+.login-input{
+  width:100%;padding:13px 15px;
+  background:rgba(246,241,232,.05);
+  border:1px solid rgba(200,165,105,.25);
+  border-radius:var(--r);
+  color:var(--ivory);
+  font-family:'Zen Kaku Gothic New',sans-serif;
+  font-size:15px;outline:none;
+  transition:border-color .25s;
+  -webkit-appearance:none;
+}
+.login-input:focus{border-color:rgba(200,165,105,.6);}
+.login-btn{
+  width:100%;margin-top:10px;padding:15px;
+  background:linear-gradient(135deg,rgba(218,184,90,.18),rgba(218,184,90,.08));
+  border:1px solid rgba(218,184,90,.5);
+  color:var(--gold);
+  font-family:'Shippori Mincho',serif;
+  font-size:15px;letter-spacing:.35em;
+  cursor:pointer;border-radius:var(--r);
+  transition:all .3s;
+}
+.login-btn:hover{background:rgba(218,184,90,.25);border-color:rgba(218,184,90,.75);}
+.login-err{
+  font-size:12px;color:#e08080;
+  margin-top:14px;letter-spacing:.06em;
+  min-height:18px;
+}
+.login-hint{font-size:11px;color:rgba(246,241,232,.2);margin-top:20px;letter-spacing:.05em;}
+#appWrap{display:none;}
+#appWrap.visible{display:block;}
+
+
+@keyframes loginShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="loginScreen">
+  <div class="bg-wrap"><div class="bg-grad"></div><div class="bg-lines"></div><div class="bg-vl"></div><div class="bg-noise"></div></div>
+  <div class="login-box">
+    <div class="login-diamond"></div>
+    <div class="login-title">ゆすらうめ</div>
+    <div class="login-sub">STAFF LOGIN</div>
+    <div class="login-field">
+      <label class="login-label" for="loginId">ID</label>
+      <input class="login-input" id="loginId" type="text" autocomplete="username" placeholder="" spellcheck="false">
+    </div>
+    <div class="login-field">
+      <label class="login-label" for="loginPw">PASSWORD</label>
+      <input class="login-input" id="loginPw" type="password" autocomplete="current-password" placeholder="">
+    </div>
+    <button class="login-btn" onclick="doLogin()">ログイン</button>
+    <div class="login-err" id="loginErr"></div>
+    <div class="login-hint">このページはスタッフ専用です</div>
+  </div>
+</div>
+
+<!-- ══ APP (hidden until logged in) ══ -->
+<div id="appWrap">
+<div class="bg-wrap"><div class="bg-grad"></div><div class="bg-lines"></div><div class="bg-vl"></div><div class="bg-noise"></div></div>
+<div class="toast" id="toast"></div>
+
+<!-- Modals -->
+<div class="mo" id="moErr"><div class="md err"><h3 id="moErrT">エラー</h3><p id="moErrM"></p><div class="md-btns"><button class="mb gold" onclick="closeM('moErr')" data-i="close">閉じる</button></div></div></div>
+<div class="mo" id="moDel"><div class="md warn"><h3 data-i="deleteTitle">削除確認</h3><p id="moDelM"></p><div class="md-btns"><button class="mb danger" id="btnDel" data-i="deleteYes">削除する</button><button class="mb sec" onclick="closeM('moDel')" data-i="cancel">キャンセル</button></div></div></div>
+<div class="mo" id="moLock"><div class="md info"><h3 data-i="lockTitle">予約受付中</h3><p id="moLockM"></p><div class="md-btns"><button class="mb gold" onclick="closeM('moLock')" data-i="close">閉じる</button></div></div></div>
+<div class="mo" id="moConfirm"><div class="md info"><h3>最終確認</h3><p id="moConfirmM" style="line-height:1.9"></p><div class="md-btns"><button class="mb gold" id="btnConfirm">はい、確認済みにする</button><button class="mb sec" onclick="closeM('moConfirm')">キャンセル</button></div></div></div>
+
+<div class="app">
+<header>
+  <div class="hd-ornament">
+    <div class="hd-line"></div><div class="hd-diamond"><div class="hd-diamond-inner"></div></div><div class="hd-line r"></div>
+  </div>
+  <div class="hd-jp">ゆすらうめ</div>
+  <div class="hd-en">Yusuraume</div>
+  <div class="hd-tagline-line"><span class="hd-tag">ESTHET &amp; MASSAGE — BIWAKO RYOKUSUITEI</span></div>
+  <div class="hd-sub">1F 大浴場通路　｜　16:00 — 23:30</div>
+</header>
+
+<div class="sync-bar">
+  <div class="sync-dot connecting" id="syncDot"></div>
+  <span id="syncLabel">接続中...</span>
+</div>
+
+<div class="lang-bar">
+  <button class="lb active" onclick="setLang('ja',this)">日本語</button>
+  <button class="lb" onclick="setLang('en',this)">English</button>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchV('booking',this)" data-i="tabBooking">新規予約</button>
+    <button class="tab-btn" onclick="switchV('list',this)" data-i="tabList">予約一覧</button>
+    <button class="tab-btn" onclick="switchV('avail',this)" data-i="tabAvail">空き状況</button>
+    <button class="tab-btn" onclick="switchV('menu',this)" data-i="tabMenu">メニュー＆料金</button>
+  </div>
+</div>
+
+<!-- ══ BOOKING ══ -->
+<div id="vBooking">
+<div class="main-grid">
+<div class="panel">
+  <div class="ph"><div class="ph-dot"></div><span class="ph-title" data-i="newBooking">新規予約</span></div>
+  <div class="pb">
+    <div class="staff-info-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="sc"><div class="sc-name" data-i="maleStaff">男性スタッフ</div><div class="sc-hours">16:00 — 23:30</div><div class="sc-sk" data-i="maleSkills">ボディマッサージ / リンパマッサージ（オイル不使用）<br>ヘッドマッサージ / リフレクソロジー</div></div>
+      <div class="sc"><div class="sc-name" data-i="femaleStaff">女性スタッフ</div><div class="sc-hours">20:00 — 23:30</div><div class="sc-sk" data-i="femaleSkills">全メニュー対応</div></div>
+      <div class="sc spc1"><div class="sc-name" style="color:#d0b0f0">特別手配①</div><div class="sc-hours spc1">16:00 — 23:00</div><div class="sc-sk">全メニュー対応</div></div>
+      <div class="sc spc2"><div class="sc-name" style="color:#a0dcc8">特別手配②</div><div class="sc-hours spc2">16:00 — 23:00</div><div class="sc-sk">全メニュー対応</div></div>
+    </div>
+
+    <div id="lockBanner" class="lock-banner"></div>
+
+    <!-- 日付 -->
+    <div class="fg"><label class="fl" data-i="lDate">日付 <span class="req">*</span></label><input class="fi" id="fDate" type="date" onchange="onDateChg()"></div>
+
+    <!-- 人数 -->
+    <div class="fg">
+      <label class="fl" data-i="lCount">人数 <span class="req">*</span></label>
+      <div class="tog">
+        <button class="tog-btn active" id="cnt1" onclick="setCnt(1)" data-i="cnt1">1名</button>
+        <button class="tog-btn" id="cnt2" onclick="setCnt(2)" data-i="cnt2">2名（同時）</button>
+        <button class="tog-btn spc1" id="cnt3" onclick="setCnt(3)">特別手配①</button>
+        <button class="tog-btn spc2" id="cnt4" onclick="setCnt(4)">特別手配②</button>
+      </div>
+      <div class="note-box" id="cntNote1" data-i="cntNote2">※ 2名同時：男性・女性スタッフが1名ずつ担当します。各スタッフのメニューを選択してください。</div>
+      <div class="note-box" id="cntNote3" style="border-color:rgba(168,130,212,.35);color:#d0b0f0;background:rgba(168,130,212,.09)">★ 特別手配①：独立したスタッフが担当します。全メニュー対応・16:00〜23:00</div>
+      <div class="note-box" id="cntNote4" style="border-color:rgba(125,184,168,.35);color:#a0dcc8;background:rgba(125,184,168,.09)">★ 特別手配②：独立したスタッフが担当します。全メニュー対応・16:00〜23:00</div>
+
+    </div>
+
+    <!-- 氏名・部屋 -->
+    <div class="two">
+      <div class="fg"><label class="fl" data-i="lName">お客様氏名 <span class="req">*</span></label><input class="fi" id="fName" type="text"></div>
+      <div class="fg"><label class="fl" data-i="lRoom">部屋番号 <span class="req">*</span></label>
+        <select class="fs" id="fRoom">
+          <option value="">— 選択 —</option>
+          <optgroup label="6F"><option>601</option><option>602</option><option>603</option><option>605</option><option>606</option><option>607</option><option>608</option><option>610</option><option>611</option></optgroup>
+          <optgroup label="5F"><option>501</option><option>502</option><option>503</option><option>505</option><option>506</option><option>507</option><option>508</option><option>510</option><option>511</option></optgroup>
+          <optgroup label="5F別館"><option>561</option><option>562</option><option>563</option><option>565</option><option>566</option><option>567</option><option>568</option><option>569</option></optgroup>
+          <optgroup label="4F"><option>401</option><option>402</option><option>403</option><option>404</option><option>405</option><option>406</option></optgroup>
+          <optgroup label="4F別館"><option>461</option><option>462</option><option>463</option><option>465</option><option>466</option><option>467</option><option>468</option><option>469</option></optgroup>
+          <optgroup label="3F"><option>301</option><option>302</option><option>303</option><option>305</option><option>306</option><option>307</option><option>308</option><option>310</option><option>311</option></optgroup>
+          <optgroup label="3F別館"><option>361</option><option>362</option><option>363</option><option>365</option><option>366</option><option>367</option><option>368</option><option>369</option></optgroup>
+          <optgroup label="2F"><option>201</option><option>202</option><option>203</option><option>205</option><option>206</option><option>207</option><option>208</option><option>210</option><option>211</option><option>212</option></optgroup>
+          <optgroup label="2F別館"><option>281</option><option>282</option><option>283</option><option>285</option></optgroup>
+          <optgroup label="1F別館"><option>181</option><option>182</option><option>183</option></optgroup>
+          <optgroup label="その他"><option data-i="optOther">その他</option></optgroup>
+        </select>
+      </div>
+    </div>
+
+    <!-- メニュー①（男性/1名） -->
+    <div class="fg">
+      <label class="fl" id="menu1Label" data-i="lMenu1">メニュー <span class="req">*</span></label>
+      <select class="fs" id="fMenu" onchange="onMenuChg()">
+        <option value="" data-i="selectMenu">— メニューを選択 —</option>
+        <optgroup data-i="grpBody" label="ボディコース">
+          <option value="ボディマッサージ 30分" data-dur="3" data-staff="both" data-body="1" data-i-opt="menu_body30">ボディマッサージ 30分 ¥4,950</option>
+          <option value="ボディマッサージ 45分" data-dur="5" data-staff="both" data-body="1" data-i-opt="menu_body45">ボディマッサージ 45分 ¥7,150</option>
+          <option value="ボディマッサージ 45分＋延長15分" data-dur="7" data-staff="both" data-body="1" data-i-opt="menu_body45ext">ボディマッサージ 45分＋延長15分 ¥9,350</option>
+          <option value="リンパマッサージ 45分" data-dur="5" data-staff="both" data-i-opt="menu_lymph45">リンパマッサージ（オイル不使用）45分 ¥8,250</option>
+          <option value="ヘッドマッサージ 20分" data-dur="2" data-staff="B" data-i-opt="menu_head20">ヘッドマッサージ 20分 ¥3,850</option>
+          <option value="リフレクソロジー 30分" data-dur="3" data-staff="B" data-i-opt="menu_reflex30">リフレクソロジー 30分 ¥4,950</option>
+          <option value="リフレクソロジー 45分" data-dur="5" data-staff="B" data-i-opt="menu_reflex45">リフレクソロジー 45分 ¥7,150</option>
+        </optgroup>
+        <optgroup data-i="grpEste" label="エステ・オイル">
+          <option value="オイルリンパ 30分（足）" data-dur="3" data-staff="B" data-i-opt="menu_oil30">オイルリンパ 30分（足）¥5,500</option>
+          <option value="オイルリンパ 40分（背面）" data-dur="4" data-staff="B" data-i-opt="menu_oil40">オイルリンパ 40分（背面）¥7,700</option>
+          <option value="オイルリンパ 60分（全身）" data-dur="6" data-staff="B" data-i-opt="menu_oil60">オイルリンパ 60分（全身）¥12,100</option>
+          <option value="オイルリンパ 80分（全身）" data-dur="8" data-staff="B" data-i-opt="menu_oil80">オイルリンパ 80分（全身）¥15,400</option>
+          <option value="オイルリンパ 120分（全身+顔）" data-dur="12" data-staff="B" data-i-opt="menu_oil120">オイルリンパ 120分（全身+顔）¥22,000</option>
+        </optgroup>
+        <optgroup data-i="grpFacial" label="フェイシャルエステ">
+          <option value="ベーシック 40分" data-dur="4" data-staff="B" data-i-opt="menu_fac40">ベーシック 40分 ¥7,700</option>
+          <option value="ベーシック 50分" data-dur="5" data-staff="B" data-i-opt="menu_fac50">ベーシック 50分 ¥9,900</option>
+          <option value="ベーシック 60分" data-dur="6" data-staff="B" data-i-opt="menu_fac60">ベーシック 60分 ¥11,000</option>
+          <option value="アンチエイジング 70分" data-dur="7" data-staff="B" data-i-opt="menu_anti70">アンチエイジング 70分 ¥13,200</option>
+        </optgroup>
+      </select>
+      <div class="note-red" id="staffNote" data-i="staffOnlyF">※ このメニューは女性スタッフのみ対応可能です</div>
+    </div>
+
+    <!-- メニュー②（女性/2名同時用） -->
+    <div class="duo-block" id="duoBlock">
+      <div class="duo-block-title" data-i="duoMenu2Title">2名目のメニュー（女性スタッフ担当）</div>
+      <div class="fg">
+        <label class="fl" data-i="lMenu2">メニュー② <span class="req">*</span></label>
+        <select class="fs" id="fMenu2" onchange="onMenu2Chg()">
+          <option value="" data-i="selectMenu">— メニューを選択 —</option>
+          <optgroup data-i="grpBody" label="ボディコース">
+            <option value="ボディマッサージ 30分" data-dur="3" data-staff="both" data-body="1" data-i-opt="menu_body30">ボディマッサージ 30分 ¥4,950</option>
+            <option value="ボディマッサージ 45分" data-dur="5" data-staff="both" data-body="1" data-i-opt="menu_body45">ボディマッサージ 45分 ¥7,150</option>
+            <option value="ボディマッサージ 45分＋延長15分" data-dur="7" data-staff="both" data-body="1" data-i-opt="menu_body45ext">ボディマッサージ 45分＋延長15分 ¥9,350</option>
+            <option value="リンパマッサージ 45分" data-dur="5" data-staff="both" data-i-opt="menu_lymph45">リンパマッサージ 45分 ¥8,250</option>
+            <option value="ヘッドマッサージ 20分" data-dur="2" data-staff="B" data-i-opt="menu_head20">ヘッドマッサージ 20分 ¥3,850</option>
+            <option value="リフレクソロジー 30分" data-dur="3" data-staff="B" data-i-opt="menu_reflex30">リフレクソロジー 30分 ¥4,950</option>
+            <option value="リフレクソロジー 45分" data-dur="5" data-staff="B" data-i-opt="menu_reflex45">リフレクソロジー 45分 ¥7,150</option>
+          </optgroup>
+          <optgroup data-i="grpEste" label="エステ・オイル">
+            <option value="オイルリンパ 30分（足）" data-dur="3" data-staff="B" data-i-opt="menu_oil30">オイルリンパ 30分（足）¥5,500</option>
+            <option value="オイルリンパ 40分（背面）" data-dur="4" data-staff="B" data-i-opt="menu_oil40">オイルリンパ 40分（背面）¥7,700</option>
+            <option value="オイルリンパ 60分（全身）" data-dur="6" data-staff="B" data-i-opt="menu_oil60">オイルリンパ 60分（全身）¥12,100</option>
+            <option value="オイルリンパ 80分（全身）" data-dur="8" data-staff="B" data-i-opt="menu_oil80">オイルリンパ 80分（全身）¥15,400</option>
+            <option value="オイルリンパ 120分（全身+顔）" data-dur="12" data-staff="B" data-i-opt="menu_oil120">オイルリンパ 120分（全身+顔）¥22,000</option>
+          </optgroup>
+          <optgroup data-i="grpFacial" label="フェイシャルエステ">
+            <option value="ベーシック 40分" data-dur="4" data-staff="B" data-i-opt="menu_fac40">ベーシック 40分 ¥7,700</option>
+            <option value="ベーシック 50分" data-dur="5" data-staff="B" data-i-opt="menu_fac50">ベーシック 50分 ¥9,900</option>
+            <option value="ベーシック 60分" data-dur="6" data-staff="B" data-i-opt="menu_fac60">ベーシック 60分 ¥11,000</option>
+            <option value="アンチエイジング 70分" data-dur="7" data-staff="B" data-i-opt="menu_anti70">アンチエイジング 70分 ¥13,200</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+
+    <!-- 連続予約（1名のみ） -->
+    <label class="add-menu-toggle" id="addSeqToggle" style="display:none">
+      <input type="checkbox" id="chkSeq" onchange="toggleSeq()">
+      <span data-i="addSeq">続けて別メニューを追加（連続予約）</span>
+    </label>
+    <div class="menu2-wrap" id="seqWrap">
+      <div class="duo-block-title" data-i="seqTitle">メニュー②（連続）</div>
+      <div class="fg"><label class="fl" data-i="lSeqMenu">連続メニュー <span class="req">*</span></label>
+        <select class="fs" id="fSeqMenu" onchange="onSeqMenuChg();">
+          <option value="" data-i="selectMenu">— メニューを選択 —</option>
+          <optgroup data-i="grpBody" label="ボディコース">
+            <option value="ボディマッサージ 30分" data-dur="3" data-staff="both" data-body="1" data-i-opt="menu_body30">ボディマッサージ 30分 ¥4,950</option>
+            <option value="ボディマッサージ 45分" data-dur="5" data-staff="both" data-body="1" data-i-opt="menu_body45">ボディマッサージ 45分 ¥7,150</option>
+            <option value="ボディマッサージ 45分＋延長15分" data-dur="7" data-staff="both" data-body="1" data-i-opt="menu_body45ext">ボディマッサージ 45分＋延長15分 ¥9,350</option>
+            <option value="リンパマッサージ 45分" data-dur="5" data-staff="both" data-i-opt="menu_lymph45">リンパマッサージ 45分 ¥8,250</option>
+            <option value="ヘッドマッサージ 20分" data-dur="2" data-staff="B" data-i-opt="menu_head20">ヘッドマッサージ 20分 ¥3,850</option>
+            <option value="リフレクソロジー 30分" data-dur="3" data-staff="B" data-i-opt="menu_reflex30">リフレクソロジー 30分 ¥4,950</option>
+            <option value="リフレクソロジー 45分" data-dur="5" data-staff="B" data-i-opt="menu_reflex45">リフレクソロジー 45分 ¥7,150</option>
+          </optgroup>
+          <optgroup data-i="grpEste" label="エステ・オイル">
+            <option value="オイルリンパ 30分（足）" data-dur="3" data-staff="B" data-i-opt="menu_oil30">オイルリンパ 30分（足）¥5,500</option>
+            <option value="オイルリンパ 40分（背面）" data-dur="4" data-staff="B" data-i-opt="menu_oil40">オイルリンパ 40分（背面）¥7,700</option>
+            <option value="オイルリンパ 60分（全身）" data-dur="6" data-staff="B" data-i-opt="menu_oil60">オイルリンパ 60分（全身）¥12,100</option>
+            <option value="オイルリンパ 80分（全身）" data-dur="8" data-staff="B" data-i-opt="menu_oil80">オイルリンパ 80分（全身）¥15,400</option>
+            <option value="オイルリンパ 120分（全身+顔）" data-dur="12" data-staff="B" data-i-opt="menu_oil120">オイルリンパ 120分（全身+顔）¥22,000</option>
+          </optgroup>
+          <optgroup data-i="grpFacial" label="フェイシャルエステ">
+            <option value="ベーシック 40分" data-dur="4" data-staff="B" data-i-opt="menu_fac40">ベーシック 40分 ¥7,700</option>
+            <option value="ベーシック 50分" data-dur="5" data-staff="B" data-i-opt="menu_fac50">ベーシック 50分 ¥9,900</option>
+            <option value="ベーシック 60分" data-dur="6" data-staff="B" data-i-opt="menu_fac60">ベーシック 60分 ¥11,000</option>
+            <option value="アンチエイジング 70分" data-dur="7" data-staff="B" data-i-opt="menu_anti70">アンチエイジング 70分 ¥13,200</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">メニュー②担当スタッフ <span class="req">*</span></label>
+        <select class="fs" id="fSeqStaff" onchange="onSeqMenuChg();">
+          <option value="">— スタッフを選択 —</option>
+          <option value="A" id="seqStaffOptA">男性スタッフ（16:00〜23:30）</option>
+          <option value="B">女性スタッフ（20:00〜23:30）</option>
+          <option value="S1">特別手配①（16:00〜23:00）</option>
+          <option value="S2">特別手配②（16:00〜23:00）</option>
+        </select>
+        <div class="note-red" id="seqStaffOnlyF" style="display:none">※ このメニューは女性スタッフのみ対応可能です</div>
+      </div>
+    </div>
+
+    <!-- スタッフ -->
+    <div class="fg" id="staffWrap">
+      <label class="fl" data-i="lStaff">担当スタッフ <span class="req">*</span></label>
+      <div class="note-blue" style="margin-bottom:8px;display:none" id="seqStaffNote">※ 連続予約：メニュー①②とも同じスタッフが担当します</div>
+      <select class="fs" id="fStaff" onchange="renderTG()">
+        <option value="">— スタッフを選択 —</option>
+        <option value="A" id="staffOptA">男性スタッフ（16:00〜23:30）</option>
+        <option value="B">女性スタッフ（20:00〜23:30）</option>
+        <option value="S1" id="staffOptS1">特別手配①（16:00〜23:00）</option>
+        <option value="S2" id="staffOptS2">特別手配②（16:00〜23:00）</option>
+      </select>
+    </div>
+
+    <!-- 場所 -->
+    <div class="fg">
+      <label class="fl" data-i="lLoc">場所 <span class="req">*</span></label>
+      <div class="tog"><button class="tog-btn active" id="locS" onclick="setLoc('salon')" data-i="salon">サロンにて</button><button class="tog-btn" id="locR" onclick="setLoc('room')" data-i="roomSvc">ルームサービス</button></div>
+      <div class="note-box" id="locNote" data-i="locNoteText">※ ルームサービスはボディマッサージ（20:00以降）のみ対応です</div>
+    </div>
+
+    <!-- 時間 -->
+    <div class="fg">
+      <label class="fl" data-i="lTime">開始時間 <span class="req">*</span></label>
+      <div class="tg" id="tGrid"><div style="grid-column:1/-1;font-size:11px;color:var(--muted)" data-i="selectFirst">まず日付・メニュー・スタッフを選択してください</div></div>
+    </div>
+
+    <!-- 予約担当者名 -->
+    <div class="fg"><label class="fl" data-i="lStaffName">予約担当者名 <span class="req">*</span></label><input class="fi" id="fStaffName" type="text"></div>
+
+    <!-- その他要望 -->
+    <div class="fg"><label class="fl" data-i="lNote">その他ご要望</label><textarea class="fta" id="fNote"></textarea></div>
+
+    <button class="btn-book" onclick="submitBooking()"><span data-i="btnBook">予　約　確　定</span></button>
+  </div>
+</div>
+
+<!-- Today panel -->
+<div class="panel">
+  <div class="ph"><div class="ph-dot r"></div><span class="ph-title" id="todayTitle">本日の予約</span></div>
+  <div class="pb" id="todayCont"><div class="empty"><div class="ei">✦</div><p data-i="noBookings">予約はまだありません</p></div></div>
+</div>
+</div><!-- /main-grid -->
+</div><!-- /vBooking -->
+
+<!-- ══ LIST ══ -->
+<div id="vList" style="display:none">
+  <div class="panel">
+    <div class="ph" style="flex-wrap:wrap;gap:10px">
+      <div class="ph-dot r"></div><span class="ph-title" id="listTitle" data-i="allBookings">予約一覧</span>
+      <button class="unconf-btn" id="unconfBtn" onclick="toggleUnconf()">🔴 未確認 <span id="unconfCount">0</span>件</button>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <input class="fi" id="listDate" type="date" style="padding:6px 12px;font-size:12px;width:auto" onchange="onListDateChg()">
+        <button class="mb gold" onclick="clearListFilter()" style="padding:5px 14px;font-size:11px" data-i="showAll">全表示</button>
+      </div>
+    </div>
+    <div class="pb" id="listCont"><div class="empty"><div class="ei">✦</div><p data-i="noBookings">予約はまだありません</p></div></div>
+  </div>
+</div>
+
+<!-- ══ AVAIL ══ -->
+<div id="vAvail" style="display:none">
+  <div class="panel">
+    <div class="ph"><div class="ph-dot g"></div><span class="ph-title" id="availTitle" data-i="availHead">空き状況</span>
+      <div style="margin-left:auto"><input class="fi" id="availDate" type="date" style="padding:6px 12px;font-size:12px;width:auto" onchange="renderAvail()"></div>
+    </div>
+    <div class="pb" id="availCont"><div class="empty"><div class="ei">✦</div><p data-i="selectDate">日付を選択してください</p></div></div>
+  </div>
+</div>
+
+<!-- ══ MENU ══ -->
+<div id="vMenu" style="display:none">
+<div class="main-grid">
+<div class="panel">
+  <div class="ph"><div class="ph-dot"></div><span class="ph-title" data-i="menuBodyTitle">ボディコース</span></div>
+  <div class="pb">
+    <div class="ms"><h3 data-i="mBodyMassage">ボディマッサージ</h3>
+      <div class="mi"><span class="mi-name" data-i="m30min">30分</span><span class="mi-price">¥4,950</span></div>
+      <div class="mi"><span class="mi-name" data-i="m45min">45分</span><span class="mi-price">¥7,150</span></div>
+      <div class="mi"><span class="mi-name" data-i="mExt">延長15分</span><span class="mi-price">¥2,200</span></div>
+    </div>
+    <div class="ms"><h3 data-i="mLymphTitle">リンパマッサージ<span style="font-size:10px;opacity:.5"> オイル使用なし</span></h3>
+      <div class="mi"><span class="mi-name" data-i="m45min">45分</span><span class="mi-price">¥8,250</span></div>
+    </div>
+    <div class="ms"><h3 data-i="mHead">ヘッドマッサージ</h3>
+      <div class="mi"><span class="mi-name" data-i="m20min">20分</span><span class="mi-price">¥3,850</span></div>
+    </div>
+    <div class="ms"><h3 data-i="mReflex">リフレクソロジー（足つぼ）</h3>
+      <div class="mi"><span class="mi-name" data-i="m30min">30分</span><span class="mi-price">¥4,950</span></div>
+      <div class="mi"><span class="mi-name" data-i="m45min">45分</span><span class="mi-price">¥7,150</span></div>
+    </div>
+  </div>
+</div>
+<div class="panel">
+  <div class="ph"><div class="ph-dot"></div><span class="ph-title" data-i="menuEsteTitle">エステ＆オイル／フェイシャル</span></div>
+  <div class="pb">
+    <div class="ms"><h3 data-i="mOilTitle">オイルリンパマッサージ</h3>
+      <div class="mi"><span class="mi-name">30<span data-i="mMin">分</span><span class="mi-sub" data-i="mFoot">足</span></span><span class="mi-price">¥5,500</span></div>
+      <div class="mi"><span class="mi-name">40<span data-i="mMin">分</span><span class="mi-sub" data-i="mBack">背面</span></span><span class="mi-price">¥7,700</span></div>
+      <div class="mi"><span class="mi-name">60<span data-i="mMin">分</span><span class="mi-sub" data-i="mBody">全身</span></span><span class="mi-price">¥12,100</span></div>
+      <div class="mi"><span class="mi-name">80<span data-i="mMin">分</span><span class="mi-sub" data-i="mBody">全身</span></span><span class="mi-price">¥15,400</span></div>
+      <div class="mi"><span class="mi-name">120<span data-i="mMin">分</span><span class="mi-sub" data-i="mBodyFace">全身+デコルテ+顔</span></span><span class="mi-price">¥22,000</span></div>
+    </div>
+    <div class="ms"><h3 data-i="mFacialTitle">フェイシャルエステ</h3>
+      <div class="mi"><span class="mi-name" data-i="mBasic40">ベーシック 40分</span><span class="mi-price">¥7,700</span></div>
+      <div class="mi"><span class="mi-name" data-i="mBasic50">ベーシック 50分</span><span class="mi-price">¥9,900</span></div>
+      <div class="mi"><span class="mi-name" data-i="mBasic60">ベーシック 60分</span><span class="mi-price">¥11,000</span></div>
+      <div class="mi"><span class="mi-name" data-i="mAnti70">アンチエイジング 70分</span><span class="mi-price">¥13,200</span></div>
+    </div>
+    <div class="ms"><h3 data-i="mOptions">オプション<span style="font-size:10px;opacity:.5"> 各15分</span></h3>
+      <div class="mi"><span class="mi-name" data-i="mOptHead">ヘッドセラピー</span><span class="mi-price">¥3,300</span></div>
+      <div class="mi"><span class="mi-name" data-i="mOptDecol">デコルテ</span><span class="mi-price">¥3,300</span></div>
+      <div class="mi"><span class="mi-name" data-i="mOptHand">ハンドリフレクソロジー</span><span class="mi-price">¥3,300</span></div>
+    </div>
+    <p style="font-size:10px;color:var(--muted);margin-top:10px;line-height:1.9" data-i="menuNotes">※ 税込表示 ※ 男性のお客様も全てのメニューがご利用になれます<br>※ 営業時間 16:00〜23:30（受付23:00まで） ※ 1階大浴場通路</p>
+  </div>
+</div>
+</div>
+</div><!-- /vMenu -->
+</div><!-- /app -->
+
+<script>
+// ════════════════════════════════════
+// I18N — Full translations
+// ════════════════════════════════════
+const L={
+ja:{
+  tabBooking:'新規予約',tabList:'予約一覧',tabAvail:'空き状況',tabMenu:'メニュー＆料金',
+  newBooking:'新規予約',maleStaff:'男性スタッフ',femaleStaff:'女性スタッフ',
+  maleSkills:'ボディマッサージ / リンパマッサージ（オイル不使用）<br>ヘッドマッサージ / リフレクソロジー',femaleSkills:'全メニュー対応',
+  lDate:'日付',lCount:'人数',lName:'お客様氏名',lRoom:'部屋番号',
+  lMenu1:'メニュー①（男性スタッフ担当）',lMenu2:'メニュー②（女性スタッフ担当）',
+  lSeqMenu:'連続メニュー',lStaff:'担当スタッフ',lLoc:'場所',lTime:'開始時間',
+  lStaffName:'予約担当者名',lNote:'その他ご要望',
+  cnt1:'1名',cnt2:'2名（同時）',cnt3:'特別手配（2名）',
+  cntNote2:'※ 2名同時：男性・女性スタッフが1名ずつ担当します。各スタッフのメニューを選択してください。',
+  cntNoteSpec:'★ 特別手配：通常スタッフに加え特別スタッフを手配します。',
+  duoMenu2Title:'2名目のメニュー（女性スタッフ担当）',
+  addSeq:'続けて別メニューを追加（連続予約）',seqTitle:'メニュー②（連続）',
+  salon:'サロンにて',roomSvc:'ルームサービス',
+  locNoteText:'※ ルームサービスはボディマッサージ（20:00以降）のみ対応です',
+  staffOnlyF:'※ このメニューは女性スタッフのみ対応可能です',
+  btnBook:'予　約　確　定',
+  selectMenu:'— メニューを選択 —',selectFirst:'まず日付・メニュー・スタッフを選択してください',
+  todayHead:'本日の予約',allBookings:'予約一覧',availHead:'空き状況',showAll:'全表示',
+  noBookings:'予約はまだありません',selectDate:'日付を選択してください',
+  close:'閉じる',cancel:'キャンセル',deleteTitle:'削除確認',deleteYes:'削除する',
+  lockTitle:'予約受付中',lockBanner:'この日付は現在予約手続き中です。しばらくお待ちください。',
+  lockMsg:'現在この日付で別の予約手続き中です。<br>少し時間をおいてから再度お試しください。',
+  saveEdit:'変更を保存',cancelEdit:'キャンセル',editLbl:'変更',delLbl:'削除',
+  histLbl:'変更履歴',histHide:'閉じる',
+  toastBook:'予約を確定しました',toastEdit:'予約を変更しました',toastDel:'予約を削除しました',
+  pastDate:'過去の日付は予約できません。',
+  pastTime:'現在時刻より過去の時間は予約できません。',
+  errAll:'全ての必須項目を入力し、時間を選択してください。',
+  errFemale:'このメニューは女性スタッフのみ対応可能です。',
+  errRoomBody:'ルームサービスはボディマッサージのみ対応です。',
+  errRoomTime:'ルームサービスは20:00以降のみ対応です。',
+  errDouble:'選択した時間帯は既に予約が入っています。',
+  menuBodyTitle:'ボディコース',mBodyMassage:'ボディマッサージ',mExt:'延長15分',mHead:'ヘッドマッサージ',
+  mLymphTitle:'リンパマッサージ',mReflex:'リフレクソロジー（足つぼ）',
+  menuEsteTitle:'エステ＆オイル／フェイシャル',mOilTitle:'オイルリンパマッサージ',
+  mFacialTitle:'フェイシャルエステ',mOptions:'オプション',
+  mOptHead:'ヘッドセラピー',mOptDecol:'デコルテ',mOptHand:'ハンドリフレクソロジー',
+  grpBody:'ボディコース',grpEste:'エステ・オイル',grpFacial:'フェイシャルエステ',
+  menuNotes:'※ 税込表示 ※ 男性のお客様も全てのメニューがご利用になれます<br>※ 営業時間 16:00〜23:30（受付23:00まで） ※ 1階大浴場通路',
+  m30min:'30分',m45min:'45分',m20min:'20分',mMin:'分',mFoot:'足',mBack:'背面',mBody:'全身',
+  mBodyFace:'全身+デコルテ+顔',mBasic40:'ベーシック 40分',mBasic50:'ベーシック 50分',
+  mBasic60:'ベーシック 60分',mAnti70:'アンチエイジング 70分',optOther:'その他',
+  menu_body30:'ボディマッサージ 30分 ¥4,950',menu_body45:'ボディマッサージ 45分 ¥7,150',
+  menu_body45ext:'ボディマッサージ 45分＋延長15分 ¥9,350',menu_lymph45:'リンパマッサージ（オイル不使用）45分 ¥8,250',
+  menu_head20:'ヘッドマッサージ 20分 ¥3,850',menu_reflex30:'リフレクソロジー 30分 ¥4,950',
+  menu_reflex45:'リフレクソロジー 45分 ¥7,150',menu_oil30:'オイルリンパ 30分（足）¥5,500',
+  menu_oil40:'オイルリンパ 40分（背面）¥7,700',menu_oil60:'オイルリンパ 60分（全身）¥12,100',
+  menu_oil80:'オイルリンパ 80分（全身）¥15,400',menu_oil120:'オイルリンパ 120分（全身+顔）¥22,000',
+  menu_fac40:'ベーシック 40分 ¥7,700',menu_fac50:'ベーシック 50分 ¥9,900',
+  menu_fac60:'ベーシック 60分 ¥11,000',menu_anti70:'アンチエイジング 70分 ¥13,200',
+  dl_time:'時間',dl_name:'氏名',dl_room:'部屋',dl_menu:'メニュー',dl_staff:'担当',
+  dl_loc:'場所',dl_count:'人数',dl_staffName:'予約担当者',dl_editBy:'変更担当者',
+  dl_note:'要望',dl_created:'予約日時',dl_updated:'変更日時',
+  synced:'同期済み',connecting:'接続中...',offline:'オフライン',
+  locSalon:'サロン',locRoom:'ルームサービス',
+  duoLbl:'2名同時',specLbl1:'特別手配①',specLbl2:'特別手配②',multiLbl:'連続',pastLbl:'過去',spc1Name:'特別手配①',spc2Name:'特別手配②',lMenuSpc:'メニュー（特別手配）',specialSuffix:'（特別手配）',
+  cnt_ppl:'{n}名',specialSuffix:'（特別手配）',
+},
+en:{
+  tabBooking:'New Booking',tabList:'Reservations',tabAvail:'Availability',tabMenu:'Menu & Rates',
+  newBooking:'New Booking',maleStaff:'Male Therapist',femaleStaff:'Female Therapist',
+  maleSkills:'Body / Lymph Massage (no oil)<br>Head Massage / Reflexology',femaleSkills:'All menus available',
+  lDate:'Date',lCount:'Guests',lName:'Guest Name',lRoom:'Room No.',
+  lMenu1:'Menu ① (Male Therapist)',lMenu2:'Menu ② (Female Therapist)',
+  lSeqMenu:'2nd Menu (Back-to-back)',lStaff:'Therapist',lLoc:'Location',lTime:'Start Time',
+  lStaffName:'Staff (Receptionist)',lNote:'Special Requests',
+  cnt1:'1 Person',cnt2:'2 Persons (Simultaneous)',cnt3:'Special (2 Guests)',
+  cntNote2:'※ 2-person: Male & Female therapist each handle 1 guest. Select menu for each.',
+  cntNoteSpec:'★ Special arrangement: Extra therapists will be arranged in addition to regular staff.',
+  duoMenu2Title:'2nd Guest Menu (Female Therapist)',
+  addSeq:'Add 2nd menu (back-to-back)',seqTitle:'Menu ② (Back-to-back)',
+  salon:'In Salon',roomSvc:'Room Service',
+  locNoteText:'※ Room service: Body Massage only, after 20:00',
+  staffOnlyF:'※ Female Therapist only for this menu',
+  btnBook:'Confirm Booking',
+  selectMenu:'— Select Menu —',selectFirst:'Select date, menu & therapist first',
+  todayHead:"Today's Bookings",allBookings:'All Reservations',availHead:'Availability',showAll:'All',
+  noBookings:'No reservations yet',selectDate:'Please select a date',
+  close:'Close',cancel:'Cancel',deleteTitle:'Delete Booking?',deleteYes:'Delete',
+  lockTitle:'Booking In Progress',lockBanner:'Booking in progress. Please wait.',
+  lockMsg:'Another staff is booking for this date.<br>Please try again shortly.',
+  saveEdit:'Save Changes',cancelEdit:'Cancel',editLbl:'Edit',delLbl:'Delete',
+  histLbl:'History',histHide:'Hide',
+  toastBook:'Booking confirmed',toastEdit:'Booking updated',toastDel:'Booking deleted',
+  pastDate:'Past dates cannot be booked.',
+  pastTime:'Cannot book times that have already passed.',
+  errAll:'Please fill all required fields and select a time.',
+  errFemale:'Female Therapist only for this menu.',
+  errRoomBody:'Room service: Body Massage only.',
+  errRoomTime:'Room service available after 20:00.',
+  errDouble:'This time slot is already booked.',
+  menuBodyTitle:'Body Course',mBodyMassage:'Body Massage',mExt:'+15min Extension',
+  mHead:'Head Massage',mLymphTitle:'Lymph Massage',mReflex:'Reflexology (Foot)',
+  menuEsteTitle:'Este & Oil / Facial',mOilTitle:'Oil Lymph Massage',
+  mFacialTitle:'Facial Este',mOptions:'Options',
+  mOptHead:'Head Therapy',mOptDecol:'Decollete',mOptHand:'Hand Reflexology',
+  grpBody:'Body Course',grpEste:'Este & Oil',grpFacial:'Facial Este',
+  menuNotes:'※ Tax incl. ※ All menus available for male guests<br>※ Hours: 16:00-23:00 (last booking 23:00) ※ 1F Onsen Corridor',
+  m30min:'30 min',m45min:'45 min',m20min:'20 min',mMin:'min',mFoot:'Foot',mBack:'Back',mBody:'Full Body',
+  mBodyFace:'Full Body+Neck+Face',mBasic40:'Basic 40min',mBasic50:'Basic 50min',
+  mBasic60:'Basic 60min',mAnti70:'Anti-Aging 70min',optOther:'Other',
+  menu_body30:'Body Massage 30min ¥4,950',menu_body45:'Body Massage 45min ¥7,150',
+  menu_body45ext:'Body Massage 45min + Ext.15min ¥9,350',menu_lymph45:'Lymph Massage (no oil) 45min ¥8,250',
+  menu_head20:'Head Massage 20min ¥3,850',menu_reflex30:'Reflexology 30min ¥4,950',
+  menu_reflex45:'Reflexology 45min ¥7,150',menu_oil30:'Oil Lymph 30min (Foot) ¥5,500',
+  menu_oil40:'Oil Lymph 40min (Back) ¥7,700',menu_oil60:'Oil Lymph 60min (Full Body) ¥12,100',
+  menu_oil80:'Oil Lymph 80min (Full Body) ¥15,400',menu_oil120:'Oil Lymph 120min (Full+Face) ¥22,000',
+  menu_fac40:'Basic Facial 40min ¥7,700',menu_fac50:'Basic Facial 50min ¥9,900',
+  menu_fac60:'Basic Facial 60min ¥11,000',menu_anti70:'Anti-Aging 70min ¥13,200',
+  dl_time:'Time',dl_name:'Name',dl_room:'Room',dl_menu:'Menu',dl_staff:'Therapist',
+  dl_loc:'Location',dl_count:'Guests',dl_staffName:'Receptionist',dl_editBy:'Edited by',
+  dl_note:'Note',dl_created:'Booked',dl_updated:'Updated',
+  synced:'Synced',connecting:'Connecting...',offline:'Offline',
+  locSalon:'Salon',locRoom:'Room Service',
+  duoLbl:'2 Guests',specLbl1:'Special ①',specLbl2:'Special ②',multiLbl:'Back-to-back',pastLbl:'Past',spc1Name:'Special Staff ①',spc2Name:'Special Staff ②',lMenuSpc:'Menu (Special)',specialSuffix:' (Special)',
+  cnt_ppl:'{n} persons',specialSuffix:' (Special)',
+}};
+
+let lang='ja';
+function T(k){return (L[lang]&&L[lang][k]!==undefined)?L[lang][k]:(L.ja[k]||k);}
+
+function setLang(l,btn){
+  lang=l;
+  document.querySelectorAll('.lb').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  applyLang();
+  renderToday();renderList();renderAvail();
+}
+function applyLang(){
+  document.querySelectorAll('[data-i]').forEach(el=>{
+    // NEVER touch optgroup or option elements with innerHTML - it wipes child options
+    const tag=el.tagName.toLowerCase();
+    if(tag==='optgroup'){
+      const v=T(el.getAttribute('data-i'));if(v)el.label=v;
+      return;
+    }
+    if(tag==='option')return;
+    const k=el.getAttribute('data-i');const v=T(k);
+    if(v!==undefined&&v!==k)el.innerHTML=v;
+  });
+  // Refresh staff option labels
+  const soa=document.getElementById('staffOptA');
+  if(soa&&!soa.disabled)soa.textContent=T('maleStaff')+'（16:00〜23:30）';
+  const fStaff=document.getElementById('fStaff');
+  if(fStaff&&fStaff.options[2])fStaff.options[2].textContent=T('femaleStaff')+'（20:00〜23:30）';
+  const sos1=document.getElementById('staffOptS1');
+  if(sos1)sos1.textContent=T('spc1Name')+'（16:00〜23:00）';
+  const sos2=document.getElementById('staffOptS2');
+  if(sos2)sos2.textContent=T('spc2Name')+'（16:00〜23:00）';
+}
+
+// ════════════════════════════════════
+// STATE & STORAGE
+// ════════════════════════════════════
+let bks=[];
+const STORE_KEY='ysr_v5';
+const LOCK_KEY='ysr_locks_v5';
+const LOCK_TTL=60000;
+const myLockId='lk_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+
+const STAFF={A:{name:'男性スタッフ',start:16,end:23,endMin:30},B:{name:'女性スタッフ',start:20,end:23,endMin:30},S1:{name:'特別手配①',start:16,end:23,endMin:0},S2:{name:'特別手配②',start:16,end:23,endMin:0}};
+// 閉店時刻 23:30 = 1410分
+const CLOSE=23*60+30;
+const MD={
+  // maleOk:true = 男性スタッフが施術可能
+  'ボディマッサージ 30分':          {dur:3, staff:'both',isBody:true, maleOk:true},
+  'ボディマッサージ 45分':          {dur:5, staff:'both',isBody:true, maleOk:true},
+  'ボディマッサージ 45分＋延長15分':{dur:7, staff:'both',isBody:true, maleOk:true},
+  'リンパマッサージ 45分':          {dur:5, staff:'both',isBody:false,maleOk:true},
+  'ヘッドマッサージ 20分':          {dur:2, staff:'both',isBody:false,maleOk:true},
+  'リフレクソロジー 30分':          {dur:3, staff:'both',isBody:false,maleOk:true},
+  'リフレクソロジー 45分':          {dur:5, staff:'both',isBody:false,maleOk:true},
+  // 女性スタッフのみ
+  'オイルリンパ 30分（足）':        {dur:3, staff:'B',   isBody:false,maleOk:false},
+  'オイルリンパ 40分（背面）':      {dur:4, staff:'B',   isBody:false,maleOk:false},
+  'オイルリンパ 60分（全身）':      {dur:6, staff:'B',   isBody:false,maleOk:false},
+  'オイルリンパ 80分（全身）':      {dur:8, staff:'B',   isBody:false,maleOk:false},
+  'オイルリンパ 120分（全身+顔）':  {dur:12,staff:'B',   isBody:false,maleOk:false},
+  'ベーシック 40分':                {dur:4, staff:'B',   isBody:false,maleOk:false},
+  'ベーシック 50分':                {dur:5, staff:'B',   isBody:false,maleOk:false},
+  'ベーシック 60分':                {dur:6, staff:'B',   isBody:false,maleOk:false},
+  'アンチエイジング 70分':          {dur:7, staff:'B',   isBody:false,maleOk:false},
+};
+
+let selTime=null,selLoc='salon',gCnt=1,hasSeq=false;
+
+function t2m(t){const[h,m]=t.split(':').map(Number);return h*60+m;}
+function m2t(m){return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function nowMins(){const n=new Date();return n.getHours()*60+n.getMinutes();}
+
+// ════════════════════════════════════
+// GAS API 通信 + BroadcastChannel（複数タブ即時同期）
+// ★ デプロイ後のURLを下記 GAS_URL に設定してください ★
+// ════════════════════════════════════
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz4M98V3at9KOydXgilM1lz7s5qCZvW4hOinJdnvaSqJIHCytp_50KsIG2NvmszdEpYSw/exec';
+const SYNC_INTERVAL = 10000; // ポーリング間隔(ms) 複数端末の変更検知用
+
+// ── BroadcastChannel: 同一端末の複数タブ間即時同期 ──
+let bc=null;
+try{
+  bc=new BroadcastChannel('yusuraume_v5');
+  bc.onmessage=(e)=>{
+    if(e.data&&e.data.type==='update'&&e.data.bks){
+      bks=e.data.bks;
+      renderToday();renderList();renderAvail();renderTG();
+      setSyncStatus('connected');
+    }
+  };
+}catch(e){}
+
+// ── GAS URLが未設定かどうか ───────────────────────────
+function gasReady(){return GAS_URL&&GAS_URL!=='YOUR_GAS_WEBAPP_URL_HERE';}
+
+// ── ローカルキャッシュに保存してタブ間通知 ───────────
+function saveLocal(){
+  try{localStorage.setItem(STORE_KEY,JSON.stringify(bks));}catch(_){}
+  try{if(bc)bc.postMessage({type:'update',bks});}catch(_){}
+}
+
+// ── GET: 全予約取得 ──────────────────────────────────
+async function syncLoad(){
+  if(!gasReady()){
+    // GAS未設定: localStorageのみ
+    try{
+      const raw=localStorage.getItem(STORE_KEY);
+      if(raw){const d=JSON.parse(raw);bks=d;normAll();if(JSON.stringify(d)!==JSON.stringify(bks)){renderToday();renderList();renderAvail();renderTG();}}
+      setSyncStatus('connected');
+    }catch(_){setSyncStatus('offline');}
+    return;
+  }
+  setSyncStatus('connecting');
+  try{
+    const res=await fetch(GAS_URL,{method:'GET',redirect:'follow'});
+    const json=await res.json();
+    if(!json.ok)throw new Error(json.error);
+    bks=json.data;normAll();
+    saveLocal();
+    renderToday();renderList();renderAvail();renderTG();
+    setSyncStatus('connected');
+  }catch(err){
+    setSyncStatus('offline');
+    // オフライン時はキャッシュを使用
+    try{const raw=localStorage.getItem(STORE_KEY);if(raw)bks=JSON.parse(raw);}catch(_){}
+  }
+}
+
+// ── POST: 新規登録 ───────────────────────────────────
+async function apiPost(bk){
+  // bks への追加は呼び出し元が責任を持つ。ここでは送信のみ。
+  if(!gasReady()){return bk;} // GAS未設定: 何もせずそのまま返す
+  const res=await fetch(GAS_URL,{
+    method:'POST',redirect:'follow',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(bk)
+  });
+  const json=await res.json();
+  if(!json.ok)throw new Error(json.error||'POST failed');
+  return normBk(json.data); // GASが返したデータを返すだけ
+}
+
+// ── PUT: 予約更新 ────────────────────────────────────
+async function apiPut(updatedBk){
+  if(!gasReady()){
+    const i=bks.findIndex(b=>b.id===updatedBk.id);
+    if(i>-1)bks[i]=updatedBk;
+    saveLocal();return updatedBk;
+  }
+  const res=await fetch(GAS_URL,{
+    method:'POST',redirect:'follow',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({...updatedBk,_method:'PUT'})
+  });
+  const json=await res.json();
+  if(!json.ok)throw new Error(json.error||'PUT failed');
+  const i=bks.findIndex(b=>b.id===updatedBk.id);
+  const nb2=normBk(json.data);if(i>-1)bks[i]=nb2;
+  saveLocal();
+  return nb2;
+}
+
+// ── DELETE: 予約削除 ─────────────────────────────────
+async function apiDelete(id){
+  if(!gasReady()){bks=bks.filter(b=>b.id!==id);saveLocal();return;}
+  const res=await fetch(GAS_URL,{
+    method:'POST',redirect:'follow',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id,_method:'DELETE'})
+  });
+  const json=await res.json();
+  if(!json.ok)throw new Error(json.error||'DELETE failed');
+  bks=bks.filter(b=>b.id!==id);
+  saveLocal();
+}
+
+function setSyncStatus(s){
+  const dot=document.getElementById('syncDot');
+  const lbl=document.getElementById('syncLabel');
+  if(!dot)return;
+  dot.className='sync-dot '+s;
+  lbl.textContent=T(s==='connected'?'synced':s==='connecting'?'connecting':'offline');
+}
+
+// Lock system
+function acquireLock(date){
+  const locks=JSON.parse(localStorage.getItem(LOCK_KEY)||'{}');
+  const now=Date.now(),ex=locks[date];
+  if(ex&&ex.id!==myLockId&&now-ex.at<LOCK_TTL)return false;
+  locks[date]={at:now,id:myLockId};
+  localStorage.setItem(LOCK_KEY,JSON.stringify(locks));
+  return true;
+}
+function releaseLock(date){
+  const locks=JSON.parse(localStorage.getItem(LOCK_KEY)||'{}');
+  if(locks[date]&&locks[date].id===myLockId){delete locks[date];localStorage.setItem(LOCK_KEY,JSON.stringify(locks));}
+}
+function checkLockBanner(date){
+  const b=document.getElementById('lockBanner');if(!b)return;
+  if(!date){b.classList.remove('show');return;}
+  const locks=JSON.parse(localStorage.getItem(LOCK_KEY)||'{}');
+  const ex=locks[date];
+  if(ex&&ex.id!==myLockId&&Date.now()-ex.at<LOCK_TTL){b.innerHTML=T('lockBanner');b.classList.add('show');}
+  else b.classList.remove('show');
+}
+
+// ════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════
+function getStaffEndMins(sid){return STAFF[sid].end*60+STAFF[sid].endMin;}
+
+// 施術後バッファ: 全コース一律10分（1スロット）
+// コース終了時刻+10分後から次の予約が可能
+function getBuffer(totalDurSlots){return 1;}
+
+// 予約データの型を正規化（GAS/localStorage経由で文字列になることがある）
+function normBk(b){
+  return Object.assign({},b,{
+    dur:Number(b.dur)||0,
+    seqDur:Number(b.seqDur)||0,
+    seqDur2:Number(b.seqDur2)||0,
+    dur2:Number(b.dur2)||0,
+    count:Number(b.count)||1,
+    confirmed:b.confirmed===true||b.confirmed==='true'||false,
+  });
+}
+// bks 配列全体を正規化
+// 予約データの完全正規化（GASの新旧列に対応）
+function normBkFull(b){
+  const n=normBk(b);
+  // seqStaff が空文字の場合は null 扱いに統一
+  if(n.seqStaff===''||n.seqStaff===undefined)n.seqStaff=null;
+  // confirmed が文字列 'true' の場合も true に
+  n.confirmed=(n.confirmed===true||n.confirmed==='true');
+
+  // ── 旧データ互換: seqMenu があるのに seqDur/seqDur2 が両方0の場合 ──
+  // GAS旧列には seqDur2 がなかったため、seqStaff の有無でどちらかを補完
+  if(n.seqMenu&&MD[n.seqMenu]&&n.seqDur===0&&n.seqDur2===0){
+    const isSepStaff=n.seqStaff&&n.seqStaff!==n.staff;
+    if(isSepStaff){
+      n.seqDur2=MD[n.seqMenu].dur; // 別スタッフ
+    }else{
+      n.seqDur=MD[n.seqMenu].dur;  // 同一スタッフ
+    }
+  }
+  // seqStaff が主スタッフと同じ場合は同一スタッフ扱いに統一
+  if(n.seqStaff===n.staff){n.seqStaff=null;n.seqDur2=0;}
+  return n;
+}
+function normAll(){
+  // 型正規化 + 重複ID除去（GASや旧データで同じIDが2件入ることへの対策）
+  const seen=new Set();
+  bks=bks.map(normBkFull).filter(b=>{
+    if(seen.has(b.id))return false;
+    seen.add(b.id);return true;
+  });
+}
+
+function getTaken(date,staffId,excId=null){
+  const tk=new Set();
+  bks.filter(b=>b.date===date&&b.id!==excId).forEach(b=>{
+    const dur1=Number(b.dur)||0;
+    const seqDur=Number(b.seqDur)||0;
+    const seqDur2=Number(b.seqDur2)||0;
+
+    // ① プライマリスタッフ（メニュー①＋同一スタッフ連続分）
+    if(b.staff===staffId){
+      const totalD=dur1+seqDur;
+      const buf=getBuffer(totalD);
+      const s=t2m(b.startTime);
+      for(let i=0;i<totalD+buf;i++)tk.add(s+i*10);
+    }
+
+    // ② 2名同時の女性スタッフ枠（メニュー①と同じ時刻に開始）
+    if(Number(b.count)===2&&staffId==='B'&&b.menu2){
+      const d=MD[b.menu2]?MD[b.menu2].dur:0;
+      const buf=getBuffer(d);
+      const s=t2m(b.startTime);
+      for(let i=0;i<d+buf;i++)tk.add(s+i*10);
+    }
+
+    // ③ 連続予約でメニュー②が別スタッフ
+    //    開始 = メニュー①終了後 = b.startTime + dur1*10
+    if(b.seqStaff&&b.seqStaff===staffId&&seqDur2>0){
+      const buf=getBuffer(seqDur2);
+      const seq2Start=t2m(b.startTime)+dur1*10;
+      for(let i=0;i<seqDur2+buf;i++)tk.add(seq2Start+i*10);
+    }
+  });
+  return tk;
+}
+
+function isConflict(date,staffId,startTime,totalDur,excId=null){
+  const s=t2m(startTime),e=s+totalDur*10;
+  return bks.some(b=>{
+    if(b.id===excId||b.date!==date)return false;
+    const dur1=Number(b.dur)||0;
+    const seqDur=Number(b.seqDur)||0;
+    const seqDur2=Number(b.seqDur2)||0;
+
+    // ① プライマリスタッフ
+    if(b.staff===staffId){
+      const bd=dur1+seqDur;
+      const buf=getBuffer(bd);
+      const bs=t2m(b.startTime);
+      if(bs<e&&(bs+bd*10+buf*10)>s)return true;
+    }
+    // ② 2名同時の女性枠
+    if(Number(b.count)===2&&staffId==='B'&&b.menu2){
+      const bd=MD[b.menu2]?MD[b.menu2].dur:0;
+      const buf=getBuffer(bd);
+      const bs=t2m(b.startTime);
+      if(bs<e&&(bs+bd*10+buf*10)>s)return true;
+    }
+    // ③ 連続予約の別スタッフ枠（メニュー①終了後に開始）
+    if(b.seqStaff&&b.seqStaff===staffId&&seqDur2>0){
+      const buf=getBuffer(seqDur2);
+      const bs=t2m(b.startTime)+dur1*10;
+      if(bs<e&&(bs+seqDur2*10+buf*10)>s)return true;
+    }
+    return false;
+  });
+}
+
+// ════════════════════════════════════
+// FORM LOGIC
+// ════════════════════════════════════
+function onDateChg(){
+  const d=document.getElementById('fDate').value;
+  if(d&&d<todayStr()){showErr('',T('pastDate'));document.getElementById('fDate').value=todayStr();return;}
+  selTime=null;checkLockBanner(d);renderTG();renderToday();
+}
+
+function setCnt(n){
+  gCnt=n;
+  [1,2,3,4].forEach(i=>document.getElementById('cnt'+i)?.classList.toggle('active',i===n));
+  document.getElementById('cntNote1')?.classList.toggle('show',n===2);
+  document.getElementById('cntNote3')?.classList.toggle('show',n===3);
+  document.getElementById('cntNote4')?.classList.toggle('show',n===4);
+
+  const duoBlk=document.getElementById('duoBlock');
+  const seqTog=document.getElementById('addSeqToggle');
+  const staffWrap=document.getElementById('staffWrap');
+  const menu1Lbl=document.getElementById('menu1Label');
+  const fMenu=document.getElementById('fMenu');
+  const fStaff=document.getElementById('fStaff');
+
+  if(n===2){
+    // 2名同時: メニュー①は男性スタッフ対応のみ
+    Array.from(fMenu.options).forEach(o=>{
+      if(!o.value){o.disabled=false;return;}
+      const m=MD[o.value];o.disabled=!(m&&m.maleOk);
+    });
+    if(fMenu.value&&MD[fMenu.value]&&!MD[fMenu.value].maleOk){fMenu.value='';selTime=null;}
+    duoBlk.classList.add('show');
+    if(seqTog)seqTog.style.display='none';
+    document.getElementById('chkSeq').checked=false;toggleSeq();
+    fStaff.value='A';
+    staffWrap.style.opacity='.4';staffWrap.style.pointerEvents='none';
+    if(menu1Lbl)menu1Lbl.setAttribute('data-i','lMenu1');
+  }else if(n===3){
+    // 特別手配①: 全メニュー有効、S1固定
+    Array.from(fMenu.options).forEach(o=>o.disabled=false);
+    duoBlk.classList.remove('show');
+    if(seqTog)seqTog.style.display='none';
+    document.getElementById('chkSeq').checked=false;toggleSeq();
+    fStaff.value='S1';
+    staffWrap.style.opacity='.4';staffWrap.style.pointerEvents='none';
+    document.getElementById('staffNote').classList.remove('show');
+    if(menu1Lbl)menu1Lbl.innerHTML='メニュー <span class="req">*</span>';
+    applyLang();
+  }else if(n===4){
+    // 特別手配②: 全メニュー有効、S2固定
+    Array.from(fMenu.options).forEach(o=>o.disabled=false);
+    duoBlk.classList.remove('show');
+    if(seqTog)seqTog.style.display='none';
+    document.getElementById('chkSeq').checked=false;toggleSeq();
+    fStaff.value='S2';
+    staffWrap.style.opacity='.4';staffWrap.style.pointerEvents='none';
+    document.getElementById('staffNote').classList.remove('show');
+    if(menu1Lbl)menu1Lbl.innerHTML='メニュー <span class="req">*</span>';
+    applyLang();
+  }else{
+    // 1名: 全メニュー有効
+    Array.from(fMenu.options).forEach(o=>o.disabled=false);
+    duoBlk.classList.remove('show');
+    staffWrap.style.opacity='';staffWrap.style.pointerEvents='';
+    const soa=document.getElementById('staffOptA');
+    if(soa){soa.disabled=false;soa.textContent=T('maleStaff')+'（16:00〜23:30）';}
+    document.getElementById('staffNote').classList.remove('show');
+    if(menu1Lbl)menu1Lbl.innerHTML='メニュー <span class="req">*</span>';
+    if(seqTog)seqTog.style.display='flex';
+  }
+  selTime=null;onMenuChg();
+}
+
+function onMenuChg(){
+  const sel=document.getElementById('fMenu'),opt=sel.options[sel.selectedIndex];
+  const menu=opt?opt.value:'',md=MD[menu];
+  const sNote=document.getElementById('staffNote');
+  const fs=document.getElementById('fStaff');
+
+  if(gCnt===1){
+    // メニュー①のみで主スタッフ制約を判断（メニュー②は独自のスタッフ欄で管理）
+    const onlyF=md&&md.staff==='B';
+    const staffOptA=document.getElementById('staffOptA');
+    if(staffOptA){
+      staffOptA.disabled=onlyF;
+      staffOptA.textContent=onlyF?T('maleStaff')+'（16:00〜23:30）— 対応不可':T('maleStaff')+'（16:00〜23:30）';
+    }
+    sNote.classList.toggle('show',onlyF);
+    if(onlyF&&fs.value==='A'){fs.value='';selTime=null;}
+  }
+  updateLocTog();selTime=null;renderTG();
+  const seqTog=document.getElementById('addSeqToggle');
+  if(seqTog)seqTog.style.display=(gCnt===1&&menu)?'flex':'none';
+}
+function onMenu2Chg(){selTime=null;renderTG();}
+function toggleSeq(){
+  hasSeq=document.getElementById('chkSeq').checked;
+  document.getElementById('seqWrap').classList.toggle('show',hasSeq);
+  selTime=null;
+  onSeqMenuChg();
+  renderTG();
+}
+
+function onSeqMenuChg(){
+  const seqMenu=document.getElementById('fSeqMenu').value;
+  const seqMd=seqMenu?MD[seqMenu]:null;
+  const seqStaffSel=document.getElementById('fSeqStaff');
+  const seqStaffNoteF=document.getElementById('seqStaffOnlyF');
+  const seqSN=document.getElementById('seqStaffNote');
+  const seqAOpt=document.getElementById('seqStaffOptA');
+
+  if(hasSeq&&seqStaffSel){
+    // メニュー②が女性専用 → 男性スタッフ不可
+    const onlyF=seqMd&&seqMd.staff==='B';
+    if(seqAOpt){
+      seqAOpt.disabled=onlyF;
+      seqAOpt.textContent=onlyF?T('maleStaff')+'（16:00〜23:30）— 対応不可':T('maleStaff')+'（16:00〜23:30）';
+    }
+    if(onlyF&&seqStaffSel.value==='A'){seqStaffSel.value='';}
+    if(seqStaffNoteF)seqStaffNoteF.style.display=onlyF?'block':'none';
+    if(seqSN)seqSN.style.display=seqMenu?'block':'none';
+  }
+  updateLocTog();selTime=null;renderTG();
+}
+function updateLocTog(){
+  const sel=document.getElementById('fMenu'),opt=sel.options[sel.selectedIndex];
+  const md=MD[opt?opt.value:''];
+  // ルームサービス可能条件:
+  //   1) 1名予約のみ（2名同時・特別手配は不可）
+  //   2) メニュー①がボディマッサージ (isBody:true)
+  //   3) 連続予約する場合、メニュー②もボディマッサージ（またはまだ未選択）
+  const seqMenu=hasSeq?document.getElementById('fSeqMenu')?.value:'';
+  const seqMd=seqMenu?MD[seqMenu]:null;
+  const menu1Ok=md&&md.isBody;
+  const seq2Ok=!seqMenu||(!!(seqMd&&seqMd.isBody));// 未選択またはボディのみ
+  const canRoom=menu1Ok&&seq2Ok&&gCnt===1;
+  const lr=document.getElementById('locR'),ln=document.getElementById('locNote');
+  lr.disabled=!canRoom;if(!canRoom&&selLoc==='room')setLoc('salon');
+  ln.classList.toggle('show',!!canRoom);
+}
+function setLoc(l){
+  selLoc=l;
+  document.getElementById('locS').classList.toggle('active',l==='salon');
+  document.getElementById('locR').classList.toggle('active',l==='room');
+  selTime=null;renderTG();
+}
+
+function renderTG(){
+  const grid=document.getElementById('tGrid');
+  const date=document.getElementById('fDate').value;
+  let staffId=document.getElementById('fStaff').value;
+  if(gCnt===2)staffId='A';
+  else if(gCnt===3)staffId='S1';
+  else if(gCnt===4)staffId='S2';
+  const menu=document.getElementById('fMenu').value;
+  const md=MD[menu];
+  const seqMenu=hasSeq?document.getElementById('fSeqMenu').value:'';
+  const seqStaffIdSub=hasSeq?(document.getElementById('fSeqStaff')?.value||''):'';
+  const seqIsSameStaffSub=!seqStaffIdSub||seqStaffIdSub===staffId;
+  const seqMd=seqMenu?MD[seqMenu]:null;
+  const isToday=date===todayStr();
+  const nowM=nowMins();
+
+  if(!date||(!staffId&&gCnt===1)||!menu){
+    grid.innerHTML=`<div style="grid-column:1/-1;font-size:11px;color:var(--muted)">${T('selectFirst')}</div>`;return;
+  }
+
+  // メニュー②スタッフが別の場合: メニュー①のみの時間でグリッド生成
+  const seqStaffId=hasSeq?(document.getElementById('fSeqStaff')?.value||''):'';
+  const seqIsSameStaff=!seqStaffId||seqStaffId===staffId;
+  // 同一スタッフ連続: メニュー①+②の合計時間。別スタッフ: メニュー①のみ
+  const totalDur=md.dur+(seqMd&&seqIsSameStaff?seqMd.dur:0);
+
+  // 予約済みスロット取得
+  const taken=getTaken(date,staffId);
+  const menu2El=document.getElementById('fMenu2');
+  const menu2=gCnt===2&&menu2El?menu2El.value:'';
+  const md2=menu2?MD[menu2]:null;
+  const takenB=gCnt>=2?getTaken(date,'B'):null;
+  // 連続予約②スタッフの空き（ループ外で1回だけ計算）
+  const takenSeq2=(hasSeq&&seqStaffId&&!seqIsSameStaff)?getTaken(date,seqStaffId):new Set();
+
+  // 開始可能な最小時刻(分)
+  // ・1名: スタッフの開始時刻
+  // ・2名同時: 男性スタッフは16:00〜だが、女性スタッフは20:00〜なので全体を20:00〜に統一
+  // ・ルームサービス: 20:00〜
+  let minStart;
+  if(gCnt===2){
+    minStart=20*60; // 2名同時は必ず20:00以降（女性スタッフ制約）
+  }else if(gCnt===3||gCnt===4){
+    minStart=16*60; // 特別手配: 16:00〜23:00
+  }else if(staffId&&STAFF[staffId]){
+    minStart=STAFF[staffId].start*60;
+    if(selLoc==='room')minStart=Math.max(minStart,20*60);
+  }else{
+    minStart=16*60;
+  }
+  // 連続予約でメニュー②が女性スタッフ(B)の場合:
+  // メニュー①終了時刻 >= 20:00 でないと女性スタッフが開始できない
+  // 条件: sm + md.dur*10 >= 20*60 → sm >= 20*60 - md.dur*10
+  if(hasSeq&&seqMd&&seqStaffId==='B'&&!seqIsSameStaff){
+    const femaleMin=20*60-md.dur*10; // 女性20:00開始に必要な最早メニュー①開始時刻
+    minStart=Math.max(minStart,femaleMin);
+  }
+
+  grid.innerHTML='';
+  // 10分刻みで、終了が23:30以内のスロットのみ生成
+  const closeLimit=(gCnt===3||gCnt===4)?(23*60):(CLOSE); // 特別手配は23:00まで
+  for(let sm=minStart; sm+totalDur*10<=closeLimit; sm+=10){
+    const slot=m2t(sm);
+    const btn=document.createElement('button');
+    btn.className='ts';btn.textContent=slot;
+
+    if(isToday&&sm<=nowM){
+      btn.classList.add('past');btn.disabled=true;
+    }else{
+      let blocked=false;
+      for(let i=0;i<totalDur;i++){
+        if(taken.has(sm+i*10)){blocked=true;break;}
+      }
+      // 2名同時: 女性スタッフ枠も確認
+      if(!blocked&&gCnt===2&&takenB&&md2){
+        for(let i=0;i<md2.dur;i++){
+          if(takenB.has(sm+i*10)){blocked=true;break;}
+        }
+      }
+      // 連続予約: メニュー②が別スタッフの場合
+      // メニュー②開始 = メニュー①終了後 (sm + md.dur*10)
+      if(!blocked&&hasSeq&&seqMd&&seqStaffId&&!seqIsSameStaff){
+        const seq2Start=sm+md.dur*10;
+        if(seqStaffId==='B'&&seq2Start<20*60){blocked=true;}
+        if(!blocked){
+          for(let i=0;i<seqMd.dur;i++){
+            if(takenSeq2.has(seq2Start+i*10)){blocked=true;break;}
+          }
+        }
+      }
+      if(blocked){btn.classList.add('tk');btn.disabled=true;}
+      else{
+        if(slot===selTime)btn.classList.add('sel');
+        btn.onclick=()=>{selTime=slot;renderTG();};
+      }
+    }
+    grid.appendChild(btn);
+  }
+  if(!grid.children.length){
+    grid.innerHTML=`<div style="grid-column:1/-1;font-size:11px;color:var(--muted)">予約可能な時間帯がありません</div>`;
+  }
+}
+
+// ════════════════════════════════════
+// SUBMIT
+// ════════════════════════════════════
+function submitBooking(){
+  const name=document.getElementById('fName').value.trim();
+  const room=document.getElementById('fRoom').value;
+  const menu=document.getElementById('fMenu').value;
+  let staffId=document.getElementById('fStaff').value;
+  if(gCnt===2)staffId='A';
+  else if(gCnt===3)staffId='S1';
+  else if(gCnt===4)staffId='S2';
+  const date=document.getElementById('fDate').value;
+  const staffName=document.getElementById('fStaffName').value.trim();
+  const note=document.getElementById('fNote').value.trim();
+  const seqMenu=hasSeq?document.getElementById('fSeqMenu').value:'';
+  const seqStaffIdSub=hasSeq?(document.getElementById('fSeqStaff')?.value||''):'';
+  const seqIsSameStaffSub=!seqStaffIdSub||seqStaffIdSub===staffId;
+  const menu2=gCnt===2?document.getElementById('fMenu2').value:'';
+  const md=MD[menu],seqMd=seqMenu?MD[seqMenu]:null,md2=menu2?MD[menu2]:null;
+  const seqIsSameStaffSubmit=!seqStaffIdSub||seqStaffIdSub===staffId;
+
+  // Clear errors
+  ['fDate','fName','fRoom','fMenu','fStaff','fStaffName'].forEach(id=>document.getElementById(id)?.classList.remove('err'));
+
+  let errs=[];
+  if(!date){document.getElementById('fDate').classList.add('err');errs.push(1);}
+  if(!name){document.getElementById('fName').classList.add('err');errs.push(1);}
+  if(!room){document.getElementById('fRoom').classList.add('err');errs.push(1);}
+  if(!menu){document.getElementById('fMenu').classList.add('err');errs.push(1);}
+  if(gCnt===1&&!staffId){document.getElementById('fStaff').classList.add('err');errs.push(1);}
+  if(gCnt===2&&!menu2){document.getElementById('fMenu2').classList.add('err');errs.push(1);}
+  if(hasSeq&&seqMenu&&!seqStaffIdSub){document.getElementById('fSeqStaff')?.classList.add('err');errs.push(1);}
+  if(!staffName){document.getElementById('fStaffName').classList.add('err');errs.push(1);}
+  if(!selTime)errs.push(1);
+  if(hasSeq&&!seqMenu){document.getElementById('fSeqMenu').classList.add('err');errs.push(1);}
+  if(errs.length){showErr('',T('errAll'));return;}
+
+  if(date<todayStr()){showErr('',T('pastDate'));return;}
+  if(date===todayStr()&&t2m(selTime)<=nowMins()){showErr('',T('pastTime'));return;}
+  // 男性スタッフ対応不可メニューチェック
+  if(gCnt===1&&md&&!md.maleOk&&staffId==='A'){showErr('',T('errFemale'));return;}
+  // ルームサービス制限
+  if(selLoc==='room'&&!md.isBody){showErr('',T('errRoomBody'));return;}
+  if(selLoc==='room'&&t2m(selTime)<20*60){showErr('',T('errRoomTime'));return;}
+  // 別スタッフ連続の場合、メニュー②は別スタッフが担当するのでメニュー①のdurのみ
+  const seqSameForClose=!seqStaffIdSub||seqStaffIdSub===staffId;
+  const totalDur=md.dur+(seqMd&&seqSameForClose?seqMd.dur:0);
+  // 閉店時刻チェック
+  const submitClose=(gCnt===3||gCnt===4)?(23*60):CLOSE;
+  if(t2m(selTime)+totalDur*10>submitClose){showErr('',gCnt>=3?'特別手配は23:00終了までです。':'終了時刻が23:30を超えます。別のメニューまたは時間を選択してください。');return;}
+  if(isConflict(date,staffId,selTime,totalDur)){showErr('',T('errDouble'));return;}
+  if(gCnt===2&&md2&&isConflict(date,'B',selTime,md2.dur)){showErr('',T('errDouble'));return;}
+  // 連続予約でメニュー②が別スタッフの場合、そのスタッフの空きも確認
+  // メニュー②開始時刻 = selTime + md.dur*10（メニュー①終了後）
+  if(hasSeq&&seqMd&&seqStaffIdSub&&seqStaffIdSub!==staffId){
+    const seq2StartMins=t2m(selTime)+md.dur*10;
+    const seq2StartStr=m2t(seq2StartMins);
+    if(isConflict(date,seqStaffIdSub,seq2StartStr,seqMd.dur)){showErr('',T('errDouble'));return;}
+  }
+
+  const locked=acquireLock(date);
+  if(!locked){document.getElementById('moLockM').innerHTML=T('lockMsg');openM('moLock');return;}
+
+  const now=new Date().toISOString();
+  const seqSameStaff=!seqStaffIdSub||seqStaffIdSub===staffId;
+  const bk=normBkFull({
+    id:Date.now(),name,room,menu,menu2:menu2||null,seqMenu:seqMenu||null,
+    seqStaff:seqStaffIdSub||null,
+    staff:staffId,date,startTime:selTime,dur:md.dur,
+    seqDur:seqMd&&seqSameStaff?seqMd.dur:0,
+    seqDur2:seqMd&&!seqSameStaff?seqMd.dur:0,
+    dur2:md2?md2.dur:0,
+    loc:selLoc,count:gCnt,staffName,note,createdAt:now,history:[],confirmed:false
+  });
+  // ローカルに1回だけ追加して即描画
+  bks.push(bk);
+  saveLocal();
+  renderToday();renderTG();renderList();renderAvail();toast(T('toastBook'));resetForm();
+  // GASへ非同期送信（返ってきたら差し替え）
+  setSyncStatus('connecting');
+  apiPost(bk).then(saved=>{
+    const idx=bks.findIndex(b=>b.id===bk.id);
+    if(idx>-1){bks[idx]=normBkFull(saved);saveLocal();}
+    setSyncStatus('connected');
+    renderToday();renderTG();renderList();renderAvail();
+  }).catch(()=>setSyncStatus('offline'));
+  setTimeout(()=>releaseLock(date),3000);
+}
+
+function resetForm(){
+  ['fName','fStaffName','fNote'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['fRoom','fMenu','fStaff','fMenu2','fSeqMenu','fSeqStaff'].forEach(id=>{const el=document.getElementById(id);if(el)el.selectedIndex=0;});
+  document.getElementById('chkSeq').checked=false;
+  document.getElementById('staffOptA').disabled=false;
+  document.getElementById('staffOptA').textContent=T('maleStaff')+'（16:00〜23:30）';
+  document.getElementById('staffNote').classList.remove('show');
+  document.getElementById('locNote').classList.remove('show');
+  document.getElementById('locR').disabled=false;
+  document.getElementById('addSeqToggle').style.display='none';
+  hasSeq=false;toggleSeq();setLoc('salon');setCnt(1);selTime=null;
+  ['fDate','fName','fRoom','fMenu','fStaff','fStaffName'].forEach(id=>document.getElementById(id)?.classList.remove('err'));
+}
+
+// ════════════════════════════════════
+// CARD HTML
+// ════════════════════════════════════
+function fmtDT(iso){if(!iso)return'';const d=new Date(iso);return d.toLocaleDateString('ja-JP')+' '+d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});}
+function isPast(b){
+  const dur1=Number(b.dur)||0;
+  const seqDur=Number(b.seqDur)||0;
+  const seqDur2=Number(b.seqDur2)||0;
+  const totalEnd=t2m(b.startTime)+Math.max(dur1+seqDur, dur1+seqDur2)*10;
+  return b.date<todayStr()||(b.date===todayStr()&&totalEnd<=nowMins());
+}
+
+function staffName(sid){
+  return sid==='A'?T('maleStaff'):sid==='B'?T('femaleStaff'):sid==='S1'?T('spc1Name'):sid==='S2'?T('spc2Name'):sid||'—';
+}
+function cardHTML(b){
+  const dur1=Number(b.dur)||0;
+  const seqDur=Number(b.seqDur)||0;   // 同一スタッフ連続
+  const seqDur2=Number(b.seqDur2)||0; // 別スタッフ連続
+
+  // 表示上の終了時刻: 別スタッフ連続ならメニュー②終了まで
+  let endT;
+  if(b.seqMenu&&seqDur2>0&&b.seqStaff&&b.seqStaff!==b.staff){
+    // メニュー①終了 + メニュー②時間
+    const seq2Start=t2m(b.startTime)+dur1*10;
+    endT=m2t(seq2Start+seqDur2*10);
+  }else{
+    endT=m2t(t2m(b.startTime)+(dur1+seqDur)*10);
+  }
+
+  const past=isPast(b);
+  const locLbl=b.loc==='room'?T('locRoom'):T('locSalon');
+  const badge1=b.loc==='room'?`<span class="badge room">${T('roomSvc')}</span>`:`<span class="badge ok">${T('salon')}</span>`;
+  const isS1=b.staff==='S1';const isS2=b.staff==='S2';
+  const badge2=b.count===2?`<span class="badge duo">${T('duoLbl')}</span>`:isS1?`<span class="badge" style="color:#d0b0f0;border-color:rgba(168,130,212,.45);background:var(--spc1b)">${T('spc1Name')}</span>`:isS2?`<span class="badge" style="color:#a0dcc8;border-color:rgba(125,184,168,.45);background:var(--spc2b)">${T('spc2Name')}</span>`:'';
+  const badge3=b.seqMenu?`<span class="badge multi">${T('multiLbl')}</span>`:'';
+  const badge4=past?`<span class="badge past">${T('pastLbl')}</span>`:'';
+  const badge5=b.confirmed?`<span class="badge" style="color:#8aba95;border-color:rgba(138,186,149,.5);background:rgba(138,186,149,.12)">✓ 確認済</span>`:'';
+
+  // メニュー表示: 連続の場合は①→②を1行にまとめる
+  let menuDisp;
+  if(b.seqMenu&&seqDur2>0&&b.seqStaff&&b.seqStaff!==b.staff){
+    // 別スタッフ連続: メニュー①（スタッフA）→ メニュー②（スタッフB）
+    const seq2StartStr=m2t(t2m(b.startTime)+dur1*10);
+    menuDisp=`<div>${b.menu} <small style="opacity:.55">（${staffName(b.staff)} 〜${seq2StartStr}）</small></div>`
+            +`<div style="margin-top:5px;padding-top:5px;border-top:1px solid rgba(246,241,232,.08)">${b.seqMenu} <small style="opacity:.55">（${staffName(b.seqStaff)} ${seq2StartStr}〜${endT}）</small></div>`;
+  }else if(b.seqMenu){
+    // 同一スタッフ連続
+    menuDisp=`${b.menu} <span style="opacity:.5">→</span> ${b.seqMenu}`;
+  }else{
+    menuDisp=b.menu;
+  }
+  if(b.menu2)menuDisp+=`<br><small style="opacity:.6">${T('femaleStaff')}：${b.menu2}</small>`;
+
+  // スタッフ表示
+  let staffDisp=staffName(b.staff);
+  if(b.count===2)staffDisp=T('maleStaff')+' + '+T('femaleStaff');
+  else if(b.seqMenu&&seqDur2>0&&b.seqStaff&&b.seqStaff!==b.staff){
+    staffDisp=`${staffName(b.staff)} → ${staffName(b.seqStaff)}`;
+  }
+
+  const dls=(k)=>T('dl_'+k);
+  const isSepSeq=b.seqMenu&&seqDur2>0&&b.seqStaff&&b.seqStaff!==b.staff;
+  // 別スタッフ連続: 担当者別の時間表示
+  let timeDisp;
+  if(isSepSeq){
+    const seq2StartStr=m2t(t2m(b.startTime)+dur1*10);
+    const endT1=seq2StartStr;
+    timeDisp=`<div style="font-size:13px">${staffName(b.staff)}　<span class="gold">${b.startTime} — ${endT1}</span></div>`
+            +`<div style="font-size:13px;margin-top:4px">${staffName(b.seqStaff)}　<span class="gold">${seq2StartStr} — ${endT}</span></div>`;
+  }else{
+    timeDisp=`<span class="gold">${b.startTime} — ${endT}</span>`;
+  }
+  let cells=`
+    <div class="bc-detail" style="grid-column:1/-1"><div class="bc-dl">${dls('time')}</div><div class="bc-dv">${timeDisp}</div></div>
+    <div class="bc-detail"><div class="bc-dl">${dls('name')}</div><div class="bc-dv">${b.name}</div></div>
+    <div class="bc-detail"><div class="bc-dl">${dls('room')}</div><div class="bc-dv">${b.room||'—'}</div></div>
+    <div class="bc-detail"><div class="bc-dl">${dls('staff')}</div><div class="bc-dv">${staffDisp}</div></div>
+    <div class="bc-detail"><div class="bc-dl">${dls('loc')}</div><div class="bc-dv">${locLbl}</div></div>
+    <div class="bc-detail"><div class="bc-dl">${dls('count')}</div><div class="bc-dv">${b.count===2?T('duoLbl'):b.staff==='S1'?T('spc1Name'):b.staff==='S2'?T('spc2Name'):'1名'}</div></div>
+    <div class="bc-detail" style="grid-column:1/-1"><div class="bc-dl">${dls('menu')}</div><div class="bc-dv">${menuDisp}</div></div>
+    <div class="bc-detail"><div class="bc-dl">${dls('staffName')}</div><div class="bc-dv">${b.staffName||'—'}</div></div>
+    <div class="bc-detail"><div class="bc-dl">${dls('created')}</div><div class="bc-dv" style="font-size:11px">${fmtDT(b.createdAt)}</div></div>
+    ${b.updatedAt?`<div class="bc-detail"><div class="bc-dl">${dls('updated')}</div><div class="bc-dv" style="font-size:11px">${fmtDT(b.updatedAt)}</div></div>`:''}
+    ${b.editBy?`<div class="bc-detail"><div class="bc-dl">${dls('editBy')}</div><div class="bc-dv">${b.editBy}</div></div>`:''}
+  `;
+  if(b.note)cells+=`<div class="bc-note-row"><div class="bc-dl">${dls('note')}</div><div class="bc-dv" style="font-size:12px;opacity:.75">${b.note}</div></div>`;
+
+  // History
+  let hist='';
+  if(b.history&&b.history.length){
+    const histRows=b.history.slice().reverse().map(h=>{
+      const hDur1=Number(h.dur)||0;
+      const hSeqDur=Number(h.seqDur)||0;
+      const hSeqDur2=Number(h.seqDur2)||0;
+      // 終了時刻: 別スタッフ連続なら①終了+②時間、それ以外は①+同一連続
+      let hEndT;
+      if(h.seqMenu&&hSeqDur2>0&&h.seqStaff&&h.seqStaff!==h.staff){
+        hEndT=m2t(t2m(h.startTime)+hDur1*10+hSeqDur2*10);
+      }else{
+        hEndT=m2t(t2m(h.startTime)+(hDur1+hSeqDur)*10);
+      }
+      const hStaff=staffName(h.staff);
+      const hLoc=h.loc==='room'?T('locRoom'):T('locSalon');
+      const hEditBy=h.editBy?`<span style="opacity:.55"> ／ 変更者：${h.editBy}</span>`:'';
+      // メニュー表示
+      let hMenuLine=h.menu;
+      if(h.seqMenu&&hSeqDur2>0&&h.seqStaff&&h.seqStaff!==h.staff){
+        const seq2Str=m2t(t2m(h.startTime)+hDur1*10);
+        hMenuLine=`${h.menu}（${staffName(h.staff)} 〜${seq2Str}）→ ${h.seqMenu}（${staffName(h.seqStaff)} ${seq2Str}〜${hEndT}）`;
+      }else if(h.seqMenu){
+        hMenuLine=`${h.menu} → ${h.seqMenu}`;
+      }
+      return`<div class="hist-row">
+        <div class="hist-when">${fmtDT(h.changedAt)}${hEditBy}</div>
+        <div class="hist-detail">
+          <span class="hist-tag">時間</span>${h.date?h.date.replace(/-/g,'/')+'　':''}<strong>${h.startTime} 〜 ${hEndT}</strong>
+        </div>
+        <div class="hist-detail">
+          <span class="hist-tag">担当</span>${hStaff}　<span class="hist-tag">場所</span>${hLoc}
+        </div>
+        <div class="hist-detail">
+          <span class="hist-tag">メニュー</span>${hMenuLine}
+        </div>
+      </div>`;
+    }).join('');
+    hist=`<span class="hist-toggle" onclick="tgHist(${b.id})" id="ht_${b.id}">${T('histLbl')} (${b.history.length})</span>
+    <div class="hist-panel" id="hp_${b.id}">${histRows}</div>`;
+  }
+
+  const canEdit=!past;
+  return`
+  <div class="bc-header">
+    <div>
+      <div class="bc-time">${b.startTime}</div>
+      <div class="bc-time-end">〜 ${endT}</div>
+      <div class="bc-badges">${badge1}${badge2}${badge3}${badge4}${badge5}</div>
+    </div>
+    <div class="bc-acts">
+      ${!b.confirmed&&!past?`<button class="bc-btn confirm" onclick="confConfirm(${b.id})">最終確認</button>`:''}
+      ${canEdit?`<button class="bc-btn edit" onclick="tgEP(${b.id})">${T('editLbl')}</button>`:''}
+      <button class="bc-btn del" onclick="confDel(${b.id})">${T('delLbl')}</button>
+    </div>
+  </div>
+  <div class="bc-details">${cells}</div>
+  ${hist?`<div style="margin-top:4px">${hist}</div>`:''}
+  <div class="ep" id="ep_${b.id}">${canEdit?buildEP(b):''}</div>`;
+}
+
+function tgHist(id){
+  const hp=document.getElementById(`hp_${id}`),ht=document.getElementById(`ht_${id}`);
+  if(!hp)return;const open=hp.classList.toggle('open');
+  ht.textContent=open?T('histHide'):`${T('histLbl')} (${hp.querySelectorAll('.hist-row').length})`;
+}
+
+// ════════════════════════════════════
+// EDIT PANEL
+// ════════════════════════════════════
+const ROOMS=['601','602','603','605','606','607','608','610','611','501','502','503','505','506','507','508','510','511','561','562','563','565','566','567','568','569','401','402','403','404','405','406','461','462','463','465','466','467','468','469','301','302','303','305','306','307','308','310','311','361','362','363','365','366','367','368','369','201','202','203','205','206','207','208','210','211','212','281','282','283','285','181','182','183'];
+
+function menuOptHTML(sel,extra=''){
+  const grps=[
+    {k:'grpBody',items:['ボディマッサージ 30分','ボディマッサージ 45分','ボディマッサージ 45分＋延長15分','リンパマッサージ 45分','ヘッドマッサージ 20分','リフレクソロジー 30分','リフレクソロジー 45分']},
+    {k:'grpEste',items:['オイルリンパ 30分（足）','オイルリンパ 40分（背面）','オイルリンパ 60分（全身）','オイルリンパ 80分（全身）','オイルリンパ 120分（全身+顔）']},
+    {k:'grpFacial',items:['ベーシック 40分','ベーシック 50分','ベーシック 60分','アンチエイジング 70分']},
+  ];
+  return extra+grps.map(g=>`<optgroup label="${T(g.k)}">${g.items.map(it=>`<option${it===sel?' selected':''}>${it}</option>`).join('')}</optgroup>`).join('');
+}
+
+function buildEP(b){
+  const ro='<option value="">— 選択 —</option>'+ROOMS.map(r=>`<option${r===b.room?' selected':''}>${r}</option>`).join('')+'<optgroup label="その他"><option value="その他"'+('その他'===b.room?' selected':'')+'>'+T('optOther')+'</option></optgroup>';
+  const md=MD[b.menu]||{};
+  const so=`<option value="">—</option><option value="A"${b.staff==='A'?' selected':''}${md.staff==='B'?' disabled':''}>${T('maleStaff')}（16:00〜23:30）</option><option value="B"${b.staff==='B'?' selected':''}>${T('femaleStaff')}（20:00〜23:30）</option><option value="S1"${b.staff==='S1'?' selected':''}>${T('spc1Name')}（16:00〜23:00）</option><option value="S2"${b.staff==='S2'?' selected':''}>${T('spc2Name')}（16:00〜23:00）</option>`;
+  const isR=b.loc==='room';
+  return`
+  <div class="two">
+    <div class="fg"><label class="fl">${T('lName')}</label><input class="fi" id="en_${b.id}" value="${b.name}"></div>
+    <div class="fg"><label class="fl">${T('lRoom')}</label><select class="fs" id="er_${b.id}">${ro}</select></div>
+  </div>
+  <div class="fg"><label class="fl">${T('lMenu1').split('（')[0]}</label><select class="fs" id="em_${b.id}" onchange="onEPMenu(${b.id})">${menuOptHTML(b.menu)}</select></div>
+  ${b.menu2?`<div class="fg"><label class="fl">${T('femaleStaff')} メニュー</label><select class="fs" id="em2_${b.id}" onchange="renderEPTG(${b.id})">${menuOptHTML(b.menu2)}</select></div>`:''}
+  ${b.seqMenu!==undefined?`<div class="fg"><label class="fl">${T('lSeqMenu')}（空白=なし）</label><select class="fs" id="eseq_${b.id}" onchange="renderEPTG(${b.id})">${menuOptHTML(b.seqMenu||'','<option value="">（なし）</option>')}</select></div>`:''}
+  <div class="fg"><label class="fl">${T('lStaff')}</label><select class="fs" id="es_${b.id}" onchange="renderEPTG(${b.id})">${so}</select></div>
+  <div class="fg"><label class="fl">${T('lDate')}</label><input class="fi" type="date" id="ed_${b.id}" value="${b.date}" min="${todayStr()}" onchange="renderEPTG(${b.id})"></div>
+  <div class="fg"><label class="fl">${T('lTime')}</label><div class="tg" id="etg_${b.id}" data-sel="${b.startTime}"></div></div>
+  <div class="fg"><label class="fl">${T('lLoc')}</label>
+    <div class="tog"><button class="tog-btn${!isR?' active':''}" id="eLS_${b.id}" onclick="setEPLoc(${b.id},'salon')">${T('salon')}</button><button class="tog-btn${isR?' active':''}" id="eLR_${b.id}" onclick="setEPLoc(${b.id},'room')">${T('roomSvc')}</button></div>
+  </div>
+  <div class="two">
+    <div class="fg"><label class="fl">${T('lStaffName')}</label><input class="fi" id="esn_${b.id}" value="${b.staffName||''}"></div>
+    <div class="fg"><label class="fl">${T('dl_editBy')}</label><input class="fi" id="eby_${b.id}" value=""></div>
+  </div>
+  <div class="fg"><label class="fl">${T('lNote')}</label><textarea class="fta" id="eno_${b.id}">${b.note||''}</textarea></div>
+  <div class="ep-acts">
+    <button class="btn-save" onclick="saveEP(${b.id})">${T('saveEdit')}</button>
+    <button class="btn-cancel" onclick="tgEP(${b.id})">${T('cancelEdit')}</button>
+  </div>`;
+}
+
+function onEPMenu(id){
+  const ms=document.getElementById(`em_${id}`);
+  const ss=document.getElementById(`es_${id}`);
+  if(!ss)return;
+  const md=MD[ms.value]||{};
+  const ao=ss.querySelector('option[value="A"]');
+  if(ao){ao.disabled=md.staff==='B';if(md.staff==='B'&&ss.value==='A')ss.value='';}
+  renderEPTG(id);
+}
+function setEPLoc(id,l){
+  document.getElementById(`eLS_${id}`)?.classList.toggle('active',l==='salon');
+  document.getElementById(`eLR_${id}`)?.classList.toggle('active',l==='room');
+  renderEPTG(id);
+}
+function tgEP(id){
+  const ep=document.getElementById(`ep_${id}`);if(!ep)return;
+  const was=ep.classList.contains('open');
+  document.querySelectorAll('.ep.open').forEach(e=>e.classList.remove('open'));
+  if(!was){ep.classList.add('open');renderEPTG(id);}
+}
+function renderEPTG(id){
+  const grid=document.getElementById(`etg_${id}`);if(!grid)return;
+  const staffId=document.getElementById(`es_${id}`)?.value;
+  const menu=document.getElementById(`em_${id}`)?.value;
+  const seqSel=document.getElementById(`eseq_${id}`);
+  const seqMenu=seqSel?seqSel.value:'';
+  const date=document.getElementById(`ed_${id}`)?.value;
+  const md=MD[menu],seqMd=seqMenu?MD[seqMenu]:null;
+  const curSel=grid.getAttribute('data-sel');
+  const isR=document.getElementById(`eLR_${id}`)?.classList.contains('active');
+  const isToday=date===todayStr();const nowM=nowMins();
+  if(!staffId||!menu){grid.innerHTML=`<div style="grid-column:1/-1;font-size:11px;color:var(--muted)">選択してください</div>`;return;}
+  const totalDur=md.dur+(seqMd?seqMd.dur:0);
+  const taken=getTaken(date,staffId,id);
+  const roomMin=isR?20*60:0;
+  grid.innerHTML='';
+  const epStaff=STAFF[staffId]||{start:16,end:23,endMin:30};
+  for(let h=epStaff.start;h<=epStaff.end;h++){
+    const maxMin=(h===epStaff.end)?epStaff.endMin:60;
+    for(let m=0;m<maxMin;m+=10){
+      const sm=h*60+m;if(sm+totalDur*10>CLOSE)break;
+      const slot=m2t(sm);
+      const btn=document.createElement('button');btn.className='ts';btn.textContent=slot;
+      if(sm<roomMin){btn.classList.add('dis');btn.disabled=true;}
+      else if(isToday&&sm<=nowM){btn.classList.add('past');btn.disabled=true;}
+      else{
+        let bl=false;for(let i=0;i<totalDur;i++)if(taken.has(sm+i*10)){bl=true;break;}
+        if(bl){btn.classList.add('tk');btn.disabled=true;}
+        else{if(slot===curSel)btn.classList.add('sel');btn.onclick=()=>{grid.setAttribute('data-sel',slot);renderEPTG(id);};}
+      }
+      grid.appendChild(btn);
+    }
+  }
+}
+function saveEP(id){
+  const name=document.getElementById(`en_${id}`)?.value.trim();
+  const room=document.getElementById(`er_${id}`)?.value;
+  const menu=document.getElementById(`em_${id}`)?.value;
+  const menu2=document.getElementById(`em2_${id}`)?.value||null;
+  const seqMenu=document.getElementById(`eseq_${id}`)?.value||null;
+  const staffId=document.getElementById(`es_${id}`)?.value;
+  const date=document.getElementById(`ed_${id}`)?.value;
+  const newT=document.getElementById(`etg_${id}`)?.getAttribute('data-sel');
+  const isR=document.getElementById(`eLR_${id}`)?.classList.contains('active');
+  const loc=isR?'room':'salon';
+  const staffName=document.getElementById(`esn_${id}`)?.value.trim()||'';
+  const editBy=document.getElementById(`eby_${id}`)?.value.trim()||'';
+  const note=document.getElementById(`eno_${id}`)?.value.trim()||'';
+  const md=MD[menu]||{},seqMd=seqMenu?MD[seqMenu]:null;
+  const isToday=date===todayStr();
+  if(!name||!menu||!staffId||!date||!newT){showErr('',T('errAll'));return;}
+  if(date<todayStr()){showErr('',T('pastDate'));return;}
+  if(isToday&&t2m(newT)<=nowMins()){showErr('',T('pastTime'));return;}
+  const totalDur=md.dur+(seqMd?seqMd.dur:0);
+  if(isConflict(date,staffId,newT,totalDur,id)){showErr('',T('errDouble'));return;}
+  const idx=bks.findIndex(b=>b.id===id);
+  if(idx>-1){
+    const old=bks[idx];
+    const he={changedAt:new Date().toISOString(),startTime:old.startTime,dur:old.dur,seqDur:old.seqDur||0,menu:old.menu,seqMenu:old.seqMenu||null,menu2:old.menu2||null,staff:old.staff,loc:old.loc,date:old.date,editBy:editBy||old.staffName};
+    const updatedBk={...old,name,room,menu,menu2:menu2||old.menu2||null,seqMenu:seqMenu||null,staff:staffId,date,startTime:newT,dur:md.dur,seqDur:seqMd?seqMd.dur:0,loc,staffName,editBy,note,history:[...(old.history||[]),he],updatedAt:new Date().toISOString()};
+    bks[idx]=updatedBk;
+    setSyncStatus('connecting');
+    apiPut(updatedBk).then(()=>setSyncStatus('connected')).catch(()=>setSyncStatus('offline'));
+    renderToday();renderList();renderAvail();toast(T('toastEdit'));
+    document.getElementById(`ep_${id}`).classList.remove('open');
+  }
+}
+
+// ════════════════════════════════════
+// DELETE
+// ════════════════════════════════════
+function confDel(id){
+  const b=bks.find(x=>x.id===id);if(!b)return;
+  document.getElementById('moDelM').textContent=`${b.name} 様  ${b.startTime}〜  ${b.menu}`;
+  document.getElementById('btnDel').onclick=async()=>{
+    setSyncStatus('connecting');
+    apiDelete(id).then(()=>setSyncStatus('connected')).catch(()=>setSyncStatus('offline'));
+    renderToday();renderList();renderAvail();closeM('moDel');toast(T('toastDel'));
+  };
+  openM('moDel');
+}
+
+function confConfirm(id){
+  const b=bks.find(x=>x.id===id);if(!b)return;
+  const dur1=Number(b.dur)||0;
+  const seqDur=Number(b.seqDur)||0;
+  const seqDur2=Number(b.seqDur2)||0;
+  let endT;
+  if(b.seqMenu&&seqDur2>0&&b.seqStaff&&b.seqStaff!==b.staff){
+    endT=m2t(t2m(b.startTime)+dur1*10+seqDur2*10);
+  }else{
+    endT=m2t(t2m(b.startTime)+(dur1+seqDur)*10);
+  }
+  const menuLine=b.seqMenu?`${b.menu} → ${b.seqMenu}`:b.menu;
+  document.getElementById('moConfirmM').innerHTML=
+    `<strong>${b.name} 様</strong><br>${b.date.replace(/-/g,'/')}　${b.startTime} 〜 ${endT}<br>${menuLine}<br><br>よろしいですか？`;
+  document.getElementById('btnConfirm').onclick=async()=>{
+    const updated={...b,confirmed:true,confirmedAt:new Date().toISOString()};
+    const idx=bks.findIndex(x=>x.id===id);
+    if(idx>-1){bks[idx]=normBkFull(updated);saveLocal();}
+    renderToday();renderList();renderAvail();closeM('moConfirm');
+    updateUnconfCount();toast('✓ 最終確認済みにしました');
+    // GASへ確認フラグのみ送信（_confirmOnly で軽量PUT）
+    setSyncStatus('connecting');
+    if(gasReady()){
+      fetch(GAS_URL,{method:'POST',redirect:'follow',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({...updated,_method:'PUT',_confirmOnly:true})
+      }).then(()=>setSyncStatus('connected')).catch(()=>setSyncStatus('offline'));
+    }else setSyncStatus('connected');
+  };
+  openM('moConfirm');
+}
+
+// ════════════════════════════════════
+// RENDER
+// ════════════════════════════════════
+function renderToday(){
+  const date=document.getElementById('fDate').value;
+  const cont=document.getElementById('todayCont');
+  const ttl=document.getElementById('todayTitle');
+  const fl=bks.filter(b=>b.date===date).sort((a,b)=>a.startTime.localeCompare(b.startTime));
+  ttl.textContent=date?`${date.replace(/-/g,'/')} (${fl.length})`:T('todayHead');
+  renderInto(cont,fl);
+  updateUnconfCount();
+}
+let listUnconfOnly=false;
+function updateUnconfCount(){
+  const n=bks.filter(b=>!b.confirmed&&b.date>=todayStr()).length;
+  const btn=document.getElementById('unconfBtn');
+  const cnt=document.getElementById('unconfCount');
+  if(!btn||!cnt)return;
+  cnt.textContent=n;
+  if(n===0){btn.setAttribute('data-zero','1');btn.classList.remove('active');}
+  else{btn.removeAttribute('data-zero');}
+}
+function toggleUnconf(){
+  listUnconfOnly=!listUnconfOnly;
+  document.getElementById('unconfBtn')?.classList.toggle('active',listUnconfOnly);
+  // 日付フィルターをクリアして未確認モード
+  if(listUnconfOnly)document.getElementById('listDate').value='';
+  renderList();
+}
+function onListDateChg(){
+  // 日付選択したら未確認フィルター解除
+  if(listUnconfOnly){listUnconfOnly=false;document.getElementById('unconfBtn')?.classList.remove('active');}
+  renderList();
+}
+function clearListFilter(){
+  listUnconfOnly=false;
+  document.getElementById('listDate').value='';
+  document.getElementById('unconfBtn')?.classList.remove('active');
+  renderList();
+}
+function renderList(){
+  const date=document.getElementById('listDate').value;
+  const cont=document.getElementById('listCont');
+  const ttl=document.getElementById('listTitle');
+  let fl=bks.filter(b=>{
+    if(date&&b.date!==date)return false;
+    if(listUnconfOnly&&(b.confirmed||b.date<todayStr()))return false;
+    return true;
+  }).sort((a,b)=>a.date!==b.date?a.date.localeCompare(b.date):a.startTime.localeCompare(b.startTime));
+  if(listUnconfOnly){
+    ttl.textContent=`🔴 未確認予約 (${fl.length}件)`;
+  }else{
+    ttl.textContent=date?`${date.replace(/-/g,'/')} (${fl.length})`:T('allBookings')+` (${fl.length})`;
+  }
+  renderInto(cont,fl);
+  updateUnconfCount();
+}
+function renderInto(cont,list){
+  if(!list.length){cont.innerHTML=`<div class="empty"><div class="ei">✦</div><p>${T('noBookings')}</p></div>`;return;}
+  cont.innerHTML='';
+  const ul=document.createElement('div');ul.className='bc-list';
+  list.forEach((b,i)=>{
+    const card=document.createElement('div');
+    card.className='bc'+(isPast(b)?' past-booking':'');
+    card.style.animationDelay=`${i*.04}s`;card.id=`c_${b.id}`;
+    card.innerHTML=cardHTML(b);ul.appendChild(card);
+  });
+  cont.appendChild(ul);
+}
+function renderAvail(){
+  const date=document.getElementById('availDate').value;
+  const cont=document.getElementById('availCont');
+  const ttl=document.getElementById('availTitle');
+  if(!date){cont.innerHTML=`<div class="empty"><div class="ei">✦</div><p>${T('selectDate')}</p></div>`;return;}
+  ttl.textContent=`${date.replace(/-/g,'/')} ${T('availHead')}`;
+  const isToday=date===todayStr();const nowM=nowMins();
+  cont.innerHTML='';const wrap=document.createElement('div');wrap.className='av-grid';
+  ['A','B'].forEach(sid=>{
+    const blk=document.createElement('div');
+    const lbl=document.createElement('div');lbl.className='av-label';
+    const snm=sid==='A'?T('maleStaff'):sid==='B'?T('femaleStaff'):sid==='S1'?T('spc1Name'):T('spc2Name');
+    lbl.textContent=`${snm}（${STAFF[sid].start}:00〜${STAFF[sid].end}:${String(STAFF[sid].endMin).padStart(2,'0')}）`;
+    blk.appendChild(lbl);
+    const dayB=bks.filter(b=>b.date===date&&(b.staff===sid||(b.count>=2&&sid==='B'&&b.menu2))).sort((a,b)=>a.startTime.localeCompare(b.startTime));
+    const occ=[];
+    bks.filter(b=>b.date===date).forEach(b=>{
+      const dur1=Number(b.dur)||0;
+      const seqDur=Number(b.seqDur)||0;
+      const seqDur2=Number(b.seqDur2)||0;
+
+      // プライマリスタッフ（同一スタッフ連続含む）
+      if(b.staff===sid){
+        const s=t2m(b.startTime);
+        occ.push({s,e:s+(dur1+seqDur)*10});
+      }
+      // 2名同時の女性スタッフ枠（メニュー①と同時開始）
+      if(Number(b.count)===2&&sid==='B'&&b.menu2&&MD[b.menu2]){
+        const s=t2m(b.startTime);
+        occ.push({s,e:s+MD[b.menu2].dur*10});
+      }
+      // 連続予約でメニュー②が別スタッフ（メニュー①終了後に開始）
+      if(b.seqStaff&&b.seqStaff===sid&&seqDur2>0){
+        const seq2Start=t2m(b.startTime)+dur1*10;
+        occ.push({s:seq2Start,e:seq2Start+seqDur2*10});
+      }
+    });
+    const sd=document.createElement('div');sd.className='av-slots';
+    for(let h=STAFF[sid].start;h<=STAFF[sid].end;h++){
+      const maxM=(h===STAFF[sid].end)?STAFF[sid].endMin:60;
+      for(let m=0;m<maxM;m+=10){
+        const sm=h*60+m;
+        const el=document.createElement('div');el.className='av-s';el.textContent=m2t(sm);
+        if(isToday&&sm<=nowM)el.classList.add('past');
+        else el.classList.add(occ.some(o=>sm>=o.s&&sm<o.e)?'busy':'free');
+        sd.appendChild(el);
+      }
+    }
+    blk.appendChild(sd);
+    const bksForDisplay=bks.filter(b=>b.date===date&&(
+      b.staff===sid||
+      (Number(b.count)===2&&sid==='B'&&b.menu2)||
+      (b.seqStaff===sid&&Number(b.seqDur2)>0)
+    ));
+    const seen=new Set();
+    let hasAny=false;
+    bksForDisplay.forEach(b=>{
+      const dur1=Number(b.dur)||0;
+      const seqDur=Number(b.seqDur)||0;
+      const seqDur2=Number(b.seqDur2)||0;
+
+      // プライマリ（1名・同一スタッフ連続）
+      if(b.staff===sid&&!seen.has('p'+b.id)){
+        seen.add('p'+b.id);hasAny=true;
+        const showDur=dur1+seqDur;
+        const eT=m2t(t2m(b.startTime)+showDur*10);
+        const d=document.createElement('div');d.className='av-row';
+        d.innerHTML=`<span style="color:rgba(200,96,96,.65)">●</span> ${b.startTime}〜${eT}　${b.name} 様　${b.menu}${b.seqMenu&&seqDur>0?(' → '+b.seqMenu):''}`;
+        blk.appendChild(d);
+      }
+      // 2名同時の女性枠（メニュー①と同時開始）
+      if(Number(b.count)===2&&sid==='B'&&b.menu2&&!seen.has('f'+b.id)){
+        seen.add('f'+b.id);hasAny=true;
+        const d2=MD[b.menu2]?MD[b.menu2].dur:0;
+        const eT=m2t(t2m(b.startTime)+d2*10);
+        const d=document.createElement('div');d.className='av-row';
+        d.innerHTML=`<span style="color:rgba(200,96,96,.65)">●</span> ${b.startTime}〜${eT}　${b.name} 様　${b.menu2}<small style="opacity:.6">（2名同時）</small>`;
+        blk.appendChild(d);
+      }
+      // 連続予約の別スタッフ②（メニュー①終了後に開始）
+      if(b.seqStaff===sid&&seqDur2>0&&b.seqMenu&&!seen.has('s'+b.id)){
+        seen.add('s'+b.id);hasAny=true;
+        const seq2Start=t2m(b.startTime)+dur1*10;
+        const eT=m2t(seq2Start+seqDur2*10);
+        const d=document.createElement('div');d.className='av-row';
+        d.innerHTML=`<span style="color:rgba(200,96,96,.65)">●</span> ${m2t(seq2Start)}〜${eT}　${b.name} 様　${b.seqMenu}<small style="opacity:.6">（連続②）</small>`;
+        blk.appendChild(d);
+      }
+    });
+    if(!hasAny){const d=document.createElement('div');d.className='av-row';d.innerHTML=`<span style="color:var(--sage)">◎</span> 全時間空き`;blk.appendChild(d);}
+    wrap.appendChild(blk);
+  });
+  cont.appendChild(wrap);
+}
+
+// ════════════════════════════════════
+// MODAL / TOAST / VIEW
+// ════════════════════════════════════
+function showErr(t,m){document.getElementById('moErrT').textContent=t||'エラー';document.getElementById('moErrM').innerHTML=m;openM('moErr');}
+function openM(id){document.getElementById(id).classList.add('show');}
+function closeM(id){document.getElementById(id).classList.remove('show');}
+document.querySelectorAll('.mo').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');}));
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+function switchV(v,btn){
+  ['Booking','List','Avail','Menu'].forEach(k=>document.getElementById('v'+k).style.display=(v===k.toLowerCase()?'':'none'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  if(v==='list'){renderList();updateUnconfCount();}if(v==='avail')renderAvail();
+}
+
+// ════════════════════════════════════
+// INIT
+// ════════════════════════════════════
+const td=todayStr();
+document.getElementById('fDate').value=td;
+document.getElementById('fDate').min=td;
+document.getElementById('listDate').value=td;
+document.getElementById('availDate').value=td;
+
+// Ensure menus are enabled on load
+setCnt(1);
+applyLang();
+function initApp(){
+  renderTG();
+  renderToday();
+  // 初期ロード: キャッシュを即座に表示 → GASから最新データ取得
+  try{const raw=localStorage.getItem(STORE_KEY);if(raw){bks=JSON.parse(raw);normAll();renderToday();renderList();}}catch(_){}
+  setSyncStatus('connecting');
+  syncLoad();
+  // 定期ポーリング（複数端末での変更を検知）
+  setInterval(()=>syncLoad(), SYNC_INTERVAL);
+  // Refresh time grid every minute for past-time marking
+  setInterval(()=>{renderTG();renderToday();renderList();renderAvail();},60000);
+  // Check lock banner
+  setInterval(()=>checkLockBanner(document.getElementById('fDate').value),5000);
+  // ログアウトボタンを言語バーの隣に追加
+  const lb=document.querySelector('.lang-bar');
+  if(lb&&!document.getElementById('logoutBtn')){
+    const btn=document.createElement('button');
+    btn.id='logoutBtn';
+    btn.textContent='ログアウト';
+    btn.style.cssText='padding:7px 16px;font-size:11px;letter-spacing:.12em;background:transparent;border:1px solid rgba(200,80,80,.3);color:rgba(220,120,120,.7);cursor:pointer;border-radius:var(--r);font-family:"Zen Kaku Gothic New",sans-serif;transition:all .25s;';
+    btn.onmouseover=()=>{btn.style.background='rgba(200,80,80,.12)';btn.style.borderColor='rgba(200,80,80,.5)';};
+    btn.onmouseout=()=>{btn.style.background='transparent';btn.style.borderColor='rgba(200,80,80,.3)';};
+    btn.onclick=doLogout;
+    lb.parentElement.insertBefore(btn,lb.nextSibling);
+  }
+}
+
+
+// ════════════════════════════════════════════════════
+// 認証設定 ← ここにIDとパスワードを設定してください
+// ════════════════════════════════════════════════════
+const USERS = [
+  { id: 'staff',  password: 'yusuraume2024' },
+  { id: 'admin',  password: 'admin2024'     },
+];
+const SESSION_KEY = 'ysr_auth_v1';
+
+function doLogin(){
+  const id=document.getElementById('loginId').value.trim();
+  const pw=document.getElementById('loginPw').value;
+  const errEl=document.getElementById('loginErr');
+  const match=USERS.find(u=>u.id===id&&u.password===pw);
+  if(match){
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({id, at: Date.now()}));
+    showApp();
+  }else{
+    errEl.textContent='IDまたはパスワードが正しくありません';
+    document.getElementById('loginPw').value='';
+    document.getElementById('loginPw').focus();
+    // 短い揺れアニメーション
+    const box=document.querySelector('.login-box');
+    box.style.animation='none';
+    box.offsetHeight; // reflow
+    box.style.animation='loginShake .4s ease';
+  }
+}
+
+function doLogout(){
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+function checkAuth(){
+  const raw=sessionStorage.getItem(SESSION_KEY);
+  if(!raw)return false;
+  try{
+    const s=JSON.parse(raw);
+    // セッション有効期限: 12時間
+    if(Date.now()-s.at > 12*60*60*1000){sessionStorage.removeItem(SESSION_KEY);return false;}
+    return true;
+  }catch(_){return false;}
+}
+
+function showApp(){
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('appWrap').classList.add('visible');
+  // アプリ初期化
+  initApp();
+}
+
+// Enterキーでログイン
+document.getElementById('loginId').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginPw').focus();});
+document.getElementById('loginPw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+// 起動時の認証チェック
+if(checkAuth()){
+  showApp();
+}else{
+  document.getElementById('loginId').focus();
+}
+
+</script>
+</div><!-- /appWrap -->
+</body>
+</html>
